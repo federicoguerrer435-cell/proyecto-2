@@ -1,55 +1,88 @@
 const passwordService = require('../../infrastructure/security/PasswordService');
 const jwtService = require('../../infrastructure/security/JwtService');
+const userRepository = require('../../infrastructure/repositories/PrismaUserRepository');
+const refreshTokenRepository = require('../../infrastructure/repositories/PrismaRefreshTokenRepository');
 
 /**
- * Login User Use Case
- * Handles user login business logic
+ * Caso de uso: Login de Usuario
+ * Autentica un usuario y retorna access token + refresh token
  */
 class LoginUserUseCase {
-  constructor(userRepository) {
-    this.userRepository = userRepository;
-  }
-
-  /**
-   * Execute user login
-   * @param {Object} credentials - User login credentials
-   * @returns {Promise<Object>} User data and token
-   */
-  async execute(credentials) {
-    const { email, password } = credentials;
-
-    // Validate input
+  async execute(email, password) {
+    // Validar entrada
     if (!email || !password) {
-      throw new Error('Email and password are required');
+      throw new Error('Email y contraseña son requeridos');
     }
 
-    // Find user by email
-    const user = await this.userRepository.findByEmail(email);
+    // Buscar usuario por email
+    const user = await userRepository.findByEmail(email);
+    
     if (!user) {
-      throw new Error('Invalid credentials');
+      throw new Error('Credenciales inválidas');
     }
 
-    // Verify password
-    const isPasswordValid = await passwordService.comparePassword(
-      password,
-      user.password
-    );
+    // Verificar si el usuario está activo
+    if (!user.isActive) {
+      throw new Error('Usuario inactivo');
+    }
 
+    // Verificar contraseña
+    const isPasswordValid = await passwordService.comparePasswords(password, user.passwordHash);
+    
     if (!isPasswordValid) {
-      throw new Error('Invalid credentials');
+      throw new Error('Credenciales inválidas');
     }
 
-    // Generate JWT token
-    const token = jwtService.generateToken({
-      id: user.id,
-      email: user.email
+    // Extraer roles y permisos
+    const roles = user.userRoles.map(ur => ur.role.name);
+    const permissions = [];
+    user.userRoles.forEach(ur => {
+      ur.role.rolePermissions.forEach(rp => {
+        permissions.push({
+          name: rp.permission.name,
+          module: rp.permission.module,
+          action: rp.permission.action
+        });
+      });
     });
 
+    // Preparar payload del token
+    const tokenPayload = {
+      userId: user.id,
+      email: user.email,
+      nombre: user.nombre,
+      roles
+    };
+
+    // Generar access token y refresh token
+    const { accessToken, refreshToken } = jwtService.generateTokens(tokenPayload);
+
+    // Guardar refresh token en la base de datos
+    await refreshTokenRepository.create({
+      userId: user.id,
+      token: refreshToken,
+      expiresAt: jwtService.getRefreshTokenExpirationDate(),
+      revoked: false
+    });
+
+    // Retornar usuario (sin password) y tokens
+    const userResponse = {
+      id: user.id,
+      email: user.email,
+      nombre: user.nombre,
+      telefono: user.telefono,
+      isActive: user.isActive,
+      roles,
+      permissions,
+      createdAt: user.createdAt
+    };
+
     return {
-      user: user.toJSON(),
-      token
+      user: userResponse,
+      accessToken,
+      refreshToken
     };
   }
 }
 
-module.exports = LoginUserUseCase;
+module.exports = new LoginUserUseCase();

@@ -1,35 +1,43 @@
 const express = require('express');
+const authController = require('../controllers/AuthController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { authorizeRole } = require('../middlewares/authorize');
+
+const router = express.Router();
 
 /**
- * Auth Routes
- * Defines authentication endpoints
+ * @route   POST /api/auth/login
+ * @desc    Login usuario y obtener access token + refresh token
+ * @access  Public
  */
-const createAuthRoutes = (authController) => {
-  const router = express.Router();
+router.post('/login', authController.login);
 
-  /**
-   * @route   POST /api/auth/register
-   * @desc    Register a new user
-   * @access  Public
-   */
-  router.post('/register', (req, res) => authController.register(req, res));
+/**
+ * @route   POST /api/auth/refresh
+ * @desc    Renovar access token usando refresh token
+ * @access  Public
+ */
+router.post('/refresh', authController.refresh);
 
-  /**
-   * @route   POST /api/auth/login
-   * @desc    Login user
-   * @access  Public
-   */
-  router.post('/login', (req, res) => authController.login(req, res));
+/**
+ * @route   POST /api/auth/logout
+ * @desc    Logout y revocar refresh token
+ * @access  Public
+ */
+router.post('/logout', authController.logout);
 
-  /**
-   * @route   GET /api/auth/profile
-   * @desc    Get current user profile
-   * @access  Private
-   */
-  router.get('/profile', authMiddleware, (req, res) => authController.getProfile(req, res));
+/**
+ * @route   POST /api/auth/register
+ * @desc    Registrar nuevo usuario (solo admin)
+ * @access  Private (ADMIN)
+ */
+router.post('/register', authMiddleware, authorizeRole('ADMIN'), authController.register);
 
-  return router;
-};
+/**
+ * @route   GET /api/auth/profile
+ * @desc    Obtener perfil del usuario autenticado
+ * @access  Private
+ */
+router.get('/profile', authMiddleware, authController.profile);
 
-module.exports = createAuthRoutes;
+module.exports = router;

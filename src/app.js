@@ -61,6 +61,9 @@ class App {
 
     // API routes
     this.app.use('/api/auth', createAuthRoutes(this.authController));
+    const clientRoutes = require('./presentation/routes/clientRoutes');
+    this.app.use('/api/clients', clientRoutes);
+
 
     // 404 handler
     this.app.use((req, res) => {

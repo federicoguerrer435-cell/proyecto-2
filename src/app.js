@@ -4,10 +4,11 @@ require('dotenv').config();
 
 const prisma = require('./infrastructure/database/prismaClient');
 const { errorHandler, notFound } = require('./presentation/middlewares/errorHandler');
-const notificationsCron = require('./cron/notificationsCron');
+// const notificationsCron = require('./cron/notificationsCron'); // Temporalmente desactivado hasta crear PrismaCreditRepository
 
 // Rutas
 const authRoutes = require('./presentation/routes/authRoutes');
+const userRoutes = require('./presentation/routes/userRoutes');
 
 /**
  * Application class
@@ -55,9 +56,9 @@ class App {
 
     // API routes
     this.app.use('/api/auth', authRoutes);
+    this.app.use('/api/users', userRoutes);
 
     // TODO: Agregar más rutas
-    // this.app.use('/api/users', userRoutes);
     // this.app.use('/api/clients', clientRoutes);
     // this.app.use('/api/credits', creditRoutes);
     // this.app.use('/api/payments', paymentRoutes);
@@ -86,9 +87,9 @@ class App {
       this.configureRoutes();
 
       // Iniciar cron jobs
-      if (process.env.NODE_ENV !== 'test') {
-        notificationsCron.start();
-      }
+      // if (process.env.NODE_ENV !== 'test') {
+      //   notificationsCron.start();
+      // }
 
       // Start listening
       this.app.listen(this.port, () => {
@@ -98,6 +99,7 @@ class App {
         console.log('🚀 ====================================');
         console.log(`📍 Health check: http://localhost:${this.port}/health`);
         console.log(`🔐 Auth endpoints: http://localhost:${this.port}/api/auth`);
+        console.log(`👥 Users endpoints: http://localhost:${this.port}/api/users`);
         console.log('🚀 ====================================\n');
       });
 
@@ -118,7 +120,7 @@ class App {
     console.log('\n⏳ Cerrando servidor...');
     
     // Detener cron jobs
-    notificationsCron.stop();
+    // notificationsCron.stop();
     
     // Desconectar Prisma
     await prisma.$disconnect();

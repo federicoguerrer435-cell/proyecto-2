@@ -1,26 +1,49 @@
+/**
+ * Entidad Cliente
+ * Representa un cliente del sistema de créditos
+ */
 class Client {
   constructor({
     id,
-    name,
+    nombre,
     cedula,
     direccion,
     telefono,
     referencias,
-    modalidad_pago,
-    documento_url,
-    created_at,
-    updated_at,
+    modalidadPago,
+    assignedTo,
+    createdAt,
+    createdBy,
+    updatedAt,
+    updatedBy
   }) {
     this.id = id;
-    this.name = name;
+    this.nombre = nombre;
     this.cedula = cedula;
     this.direccion = direccion;
     this.telefono = telefono;
     this.referencias = referencias;
-    this.modalidad_pago = modalidad_pago;
-    this.documento_url = documento_url;
-    this.created_at = created_at;
-    this.updated_at = updated_at;
+    this.modalidadPago = modalidadPago;
+    this.assignedTo = assignedTo;
+    this.createdAt = createdAt;
+    this.createdBy = createdBy;
+    this.updatedAt = updatedAt;
+    this.updatedBy = updatedBy;
+  }
+
+  /**
+   * Valida que los datos básicos del cliente sean correctos
+   */
+  validate() {
+    if (!this.nombre || this.nombre.trim().length === 0) {
+      throw new Error('El nombre del cliente es requerido');
+    }
+    if (!this.cedula || this.cedula.trim().length === 0) {
+      throw new Error('La cédula del cliente es requerida');
+    }
+    if (!this.telefono || this.telefono.trim().length === 0) {
+      throw new Error('El teléfono del cliente es requerido');
+    }
   }
 }
 

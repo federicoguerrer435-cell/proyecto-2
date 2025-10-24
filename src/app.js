@@ -2,52 +2,46 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-// Infrastructure
-const { testConnection, initializeDatabase } = require('./infrastructure/database/postgres');
-const PostgresUserRepository = require('./infrastructure/repositories/PostgresUserRepository');
+const prisma = require('./infrastructure/database/prismaClient');
+const { errorHandler, notFound } = require('./presentation/middlewares/errorHandler');
+// const notificationsCron = require('./cron/notificationsCron'); // Temporalmente desactivado hasta crear PrismaCreditRepository
 
-// Application
-const RegisterUserUseCase = require('./application/use-cases/RegisterUserUseCase');
-const LoginUserUseCase = require('./application/use-cases/LoginUserUseCase');
-
-// Presentation
-const AuthController = require('./presentation/controllers/AuthController');
-const createAuthRoutes = require('./presentation/routes/authRoutes');
+// Rutas
+const authRoutes = require('./presentation/routes/authRoutes');
+const userRoutes = require('./presentation/routes/userRoutes');
 
 /**
  * Application class
- * Configures and starts the Express server
+ * Configura y arranca el servidor Express
  */
 class App {
   constructor() {
     this.app = express();
     this.port = process.env.PORT || 3000;
-    
-    // Initialize repositories
-    this.userRepository = new PostgresUserRepository();
-    
-    // Initialize use cases
-    this.registerUseCase = new RegisterUserUseCase(this.userRepository);
-    this.loginUseCase = new LoginUserUseCase(this.userRepository);
-    
-    // Initialize controllers
-    this.authController = new AuthController(
-      this.registerUseCase,
-      this.loginUseCase
-    );
   }
 
   /**
-   * Configure middleware
+   * Configura middleware
    */
   configureMiddleware() {
+    // CORS
     this.app.use(cors());
+    
+    // Body parsers
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
+    
+    // Log de requests en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      this.app.use((req, res, next) => {
+        console.log(`${req.method} ${req.path}`);
+        next();
+      });
+    }
   }
 
   /**
-   * Configure routes
+   * Configura rutas
    */
   configureRoutes() {
     // Health check endpoint
@@ -55,59 +49,84 @@ class App {
       res.json({
         success: true,
         message: 'Server is running',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV || 'development'
       });
     });
 
     // API routes
-    this.app.use('/api/auth', createAuthRoutes(this.authController));
-    const clientRoutes = require('./presentation/routes/clientRoutes');
-    this.app.use('/api/clients', clientRoutes);
+    this.app.use('/api/auth', authRoutes);
+    this.app.use('/api/users', userRoutes);
 
+    // TODO: Agregar más rutas
+    // this.app.use('/api/clients', clientRoutes);
+    // this.app.use('/api/credits', creditRoutes);
+    // this.app.use('/api/payments', paymentRoutes);
+    // this.app.use('/api/dashboard', dashboardRoutes);
+    // this.app.use('/api/reports', reportRoutes);
 
     // 404 handler
-    this.app.use((req, res) => {
-      res.status(404).json({
-        success: false,
-        message: 'Route not found'
-      });
-    });
+    this.app.use(notFound);
 
-    // Error handler
-    this.app.use((err, req, res, next) => {
-      console.error(err.stack);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error'
-      });
-    });
+    // Global error handler (debe ser el último)
+    this.app.use(errorHandler);
   }
 
   /**
-   * Start the server
+   * Inicia el servidor
    */
   async start() {
     try {
       // Test database connection
-      await testConnection();
-      
-      // Initialize database
-      await initializeDatabase();
-      
+      console.log('🔍 Verificando conexión a base de datos...');
+      await prisma.$connect();
+      console.log('✅ Conexión a base de datos exitosa');
+
       // Configure middleware and routes
       this.configureMiddleware();
       this.configureRoutes();
-      
+
+      // Iniciar cron jobs
+      // if (process.env.NODE_ENV !== 'test') {
+      //   notificationsCron.start();
+      // }
+
       // Start listening
       this.app.listen(this.port, () => {
-        console.log(`🚀 Server running on port ${this.port}`);
+        console.log('\n🚀 ====================================');
+        console.log(`🚀 Servidor corriendo en puerto ${this.port}`);
+        console.log(`🚀 Entorno: ${process.env.NODE_ENV || 'development'}`);
+        console.log('🚀 ====================================');
         console.log(`📍 Health check: http://localhost:${this.port}/health`);
         console.log(`🔐 Auth endpoints: http://localhost:${this.port}/api/auth`);
+        console.log(`👥 Users endpoints: http://localhost:${this.port}/api/users`);
+        console.log('🚀 ====================================\n');
       });
+
+      // Manejo de cierre gracioso
+      process.on('SIGTERM', () => this.shutdown());
+      process.on('SIGINT', () => this.shutdown());
+      
     } catch (error) {
-      console.error('Failed to start server:', error);
+      console.error('❌ Error iniciando servidor:', error);
       process.exit(1);
     }
+  }
+
+  /**
+   * Cierre gracioso del servidor
+   */
+  async shutdown() {
+    console.log('\n⏳ Cerrando servidor...');
+    
+    // Detener cron jobs
+    // notificationsCron.stop();
+    
+    // Desconectar Prisma
+    await prisma.$disconnect();
+    
+    console.log('✅ Servidor cerrado correctamente');
+    process.exit(0);
   }
 }
 

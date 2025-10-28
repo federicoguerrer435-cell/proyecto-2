@@ -14,7 +14,10 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "prisma:seed": "node prisma/seed.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "jobs:notify": "node src/jobs/notifyPayments.js",
+    "jobs:notify:once": "node src/jobs/notifyPayments.js --once"
+
   },
   "keywords": [],
   "author": "",
@@ -30,6 +33,7 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^3.0.3",
+    "nodemailer": "^7.0.10",
     "pdfkit": "^0.15.2"
   },
   "devDependencies": {

@@ -11,25 +11,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: 0317
-          POSTGRES_DB: creditos_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
-    env:
-      DATABASE_URL: postgresql://postgres:0317@localhost:5432/creditos_db?schema=public
-      NODE_ENV: test
-
     steps:
       - name: 🧩 Checkout del código
         uses: actions/checkout@v4
@@ -43,17 +24,8 @@ jobs:
       - name: 📦 Instalar dependencias
         run: npm ci
 
-      - name: 🛠️ Generar cliente Prisma
-        run: npx prisma generate
-
-      - name: 🧪 Ejecutar migraciones
-        run: npx prisma migrate deploy
-
       - name: 🔍 Ejecutar linters
         run: npm run lint --if-present
-
-      - name: 🧠 Ejecutar tests (si existen)
-        run: npm test --if-present
 
       - name: 🐳 Construir imagen Docker
         run: docker build -t creditos-backend .

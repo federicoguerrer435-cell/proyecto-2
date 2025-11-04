@@ -1,0 +1,288 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum EstadoCredito {
+  PENDIENTE
+  ACTIVO
+  PAGADO
+  INCUMPLIDO
+  RENOVADO
+  RECHAZADO
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  CHEQUE
+  TARJETA
+}
+
+enum TipoNotificacion {
+  RECORDATORIO_PAGO
+  VENCIMIENTO_PROXIMO
+  CREDITO_VENCIDO
+  PAGO_REGISTRADO
+  CREDITO_APROBADO
+  CREDITO_RECHAZADO
+}
+
+enum MedioNotificacion {
+  WHATSAPP
+  EMAIL
+  SMS
+}
+
+enum EstadoEnvio {
+  SIN_ENVIAR
+  ENVIADO
+  FALLIDO
+}
+
+// ==================== MODELOS ====================
+
+model User {
+  id           Int      @id @default(autoincrement())
+  nombre       String   @db.VarChar(255)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @db.VarChar(255)
+  telefono     String?  @db.VarChar(20)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  createdBy    Int?     @map("created_by")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  updatedBy    Int?     @map("updated_by")
+
+  // Relaciones
+  userRoles     UserRole[]
+  refreshTokens RefreshToken[]
+  clientsAssigned Client[]     @relation("CobradorClientes")
+  credits       Credit[]       @relation("UserCredits")
+  payments      Payment[]      @relation("UserPayments")
+  
+  // Auditoría
+  createdUsers  User[]         @relation("UserCreator")
+  creator       User?          @relation("UserCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  updatedUsers  User[]         @relation("UserUpdater")
+  updater       User?          @relation("UserUpdater", fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@map("users")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  createdBy   Int?     @map("created_by")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedBy   Int?     @map("updated_by")
+
+  // Relaciones
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  module      String   @db.VarChar(100)
+  action      String   @db.VarChar(100)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  rolePermissions RolePermission[]
+
+  @@index([module, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId    Int
+  roleId    Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model Client {
+  id              Int      @id @default(autoincrement())
+  nombre          String   @db.VarChar(255)
+  cedula          String   @unique @db.VarChar(50)
+  direccion       String?  @db.Text
+  telefono        String   @db.VarChar(20)
+  referencias     String?  @db.Text
+  modalidadPago   String?  @db.VarChar(100) @map("modalidad_pago")
+  assignedTo      Int?     @map("assigned_to")
+  createdAt       DateTime @default(now()) @map("created_at")
+  createdBy       Int?     @map("created_by")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  updatedBy       Int?     @map("updated_by")
+
+  // Relaciones
+  cobrador      User?          @relation("CobradorClientes", fields: [assignedTo], references: [id], onDelete: SetNull)
+  credits       Credit[]
+  payments      Payment[]
+  tickets       Ticket[]
+  notifications Notification[]
+
+  @@index([cedula])
+  @@index([telefono])
+  @@index([assignedTo])
+  @@map("clients")
+}
+
+model Credit {
+  id                   Int           @id @default(autoincrement())
+  numeroCredito        String        @unique @db.VarChar(50) @map("numero_credito")
+  clienteId            Int           @map("cliente_id")
+  montoPrincipal       Decimal       @db.Decimal(15, 2) @map("monto_principal")
+  cuotas               Int
+  tasaInteresAplicada  Decimal       @db.Decimal(5, 4) @map("tasa_interes_aplicada")
+  fechaVencimiento     DateTime      @map("fecha_vencimiento")
+  estado               EstadoCredito @default(PENDIENTE)
+  createdAt            DateTime      @default(now()) @map("created_at")
+  createdBy            Int?          @map("created_by")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+  updatedBy            Int?          @map("updated_by")
+
+  // Relaciones
+  client   Client    @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  creator  User?     @relation("UserCredits", fields: [createdBy], references: [id], onDelete: SetNull)
+  payments Payment[]
+
+  @@index([numeroCredito])
+  @@index([clienteId])
+  @@index([estado])
+  @@index([fechaVencimiento])
+  @@map("credits")
+}
+
+model Payment {
+  id                    Int        @id @default(autoincrement())
+  creditId              Int        @map("credit_id")
+  clienteId             Int        @map("cliente_id")
+  userId                Int        @map("user_id") // Cobrador
+  monto                 Decimal    @db.Decimal(15, 2)
+  fechaPago             DateTime   @default(now()) @map("fecha_pago")
+  metodoPago            MetodoPago @map("metodo_pago")
+  cuotaNumero           Int        @map("cuota_numero")
+  comprobanteReferencia String?    @db.VarChar(255) @map("comprobante_referencia")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  createdBy             Int?       @map("created_by")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+  updatedBy             Int?       @map("updated_by")
+
+  // Relaciones
+  credit  Credit   @relation(fields: [creditId], references: [id], onDelete: Cascade)
+  client  Client   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  cobrador User    @relation("UserPayments", fields: [userId], references: [id], onDelete: Restrict)
+  tickets Ticket[]
+
+  @@index([creditId])
+  @@index([clienteId])
+  @@index([userId])
+  @@index([fechaPago])
+  @@map("payments")
+}
+
+model Ticket {
+  id                 Int      @id @default(autoincrement())
+  paymentId          Int      @map("payment_id")
+  numeroComprobante  String   @unique @db.VarChar(50) @map("numero_comprobante")
+  monto              Decimal  @db.Decimal(15, 2)
+  fechaEmision       DateTime @default(now()) @map("fecha_emision")
+  clienteId          Int      @map("cliente_id")
+  contenidoTexto     String?  @db.Text @map("contenido_texto") // JSON en texto
+  ticketPdf          Bytes?   @map("ticket_pdf") // bytea para PDF
+  fileName           String?  @db.VarChar(255) @map("file_name")
+  createdAt          DateTime @default(now()) @map("created_at")
+  createdBy          Int?     @map("created_by")
+
+  // Relaciones
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@index([numeroComprobante])
+  @@index([paymentId])
+  @@index([clienteId])
+  @@map("tickets")
+}
+
+model Notification {
+  id           Int                @id @default(autoincrement())
+  clienteId    Int?               @map("cliente_id")
+  tipo         TipoNotificacion
+  mensaje      String             @db.Text
+  medio        MedioNotificacion
+  estadoEnvio  EstadoEnvio        @default(SIN_ENVIAR) @map("estado_envio")
+  responseApi  String?            @db.Text @map("response_api") // JSON en texto
+  fechaEnvio   DateTime?          @map("fecha_envio")
+  createdAt    DateTime           @default(now()) @map("created_at")
+
+  // Relaciones
+  client Client? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+
+  @@index([clienteId])
+  @@index([estadoEnvio])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  token     String   @unique @db.VarChar(500)
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Config {
+  key         String   @id @db.VarChar(100)
+  value       String   @db.Text
+  descripcion String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("config")
+}

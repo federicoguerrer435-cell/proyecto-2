@@ -75,10 +75,14 @@ class PrismaUserRepository {
    * Elimina un usuario
    */
   async delete(id) {
-    return await prisma.user.delete({
-      where: { id }
-    });
-  }
+  return await prisma.user.update({
+    where: { id },
+    data: {
+      deletedAt: new Date()
+    }
+  });
+}
+
 
   /**
    * Lista usuarios con paginación

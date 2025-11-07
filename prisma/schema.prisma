@@ -142,8 +142,10 @@ model Client {
   id              Int      @id @default(autoincrement())
   nombre          String   @db.VarChar(255)
   cedula          String   @unique @db.VarChar(50)
+  email           String?  @db.VarChar(255)
   direccion       String?  @db.Text
   telefono        String   @db.VarChar(20)
+  isActive        Boolean  @default(true) @map("is_active")
   referencias     String?  @db.Text
   modalidadPago   String?  @db.VarChar(100) @map("modalidad_pago")
   assignedTo      Int?     @map("assigned_to")
@@ -163,6 +165,7 @@ model Client {
   notifications Notification[]
 
   @@index([cedula])
+  @@index([email])
   @@index([telefono])
   @@index([assignedTo])
   @@map("clients")

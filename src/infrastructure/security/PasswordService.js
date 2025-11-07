@@ -33,6 +33,14 @@ class PasswordService {
       throw new Error(`Error comparing passwords: ${error.message}`);
     }
   }
+
+  /**
+   * Backwards-compatible alias used in some parts of the codebase
+   * (older name: comparePasswords)
+   */
+  async comparePasswords(password, hashedPassword) {
+    return this.comparePassword(password, hashedPassword);
+  }
 }
 
 module.exports = new PasswordService();

@@ -31,8 +31,20 @@ const authMiddleware = async (req, res, next) => {
     const decoded = jwtService.verifyToken(token);
     
     // Attach user data to request
-    req.user = decoded;
-    global.currentUserId = decoded.id;
+    // Some parts of the code expect `userId` while others expect `id` in the token payload.
+    // Normalize both properties here so downstream code can use either consistently.
+    req.user = decoded || {};
+    if (decoded) {
+      // Ensure both aliases exist
+      if (decoded.userId && !decoded.id) req.user.id = decoded.userId;
+      if (decoded.id && !decoded.userId) req.user.userId = decoded.id;
+    }
+
+    // Also ensure roles array exists (some middlewares use req.user.roles)
+    if (!req.user.roles) req.user.roles = req.user.roles || [];
+
+    // Set global currentUserId for Prisma middleware/audit
+    global.currentUserId = req.user.userId || req.user.id || null;
 
     
     next();

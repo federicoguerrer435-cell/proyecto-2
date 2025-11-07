@@ -56,9 +56,12 @@ class PrismaClientRepository {
   /**
    * Lista clientes con paginación y filtros
    */
-  async findAll({ page = 1, limit = 10, nombre, cedula, telefono, assignedTo }) {
-    const skip = (page - 1) * limit;
-    
+  async findAll({ page = 1, limit = 10, nombre, cedula, telefono, assignedTo, email, isActive = null }) {
+    // Coerce query params to numbers when they come as strings
+    const p = parseInt(page) || 1;
+    const l = parseInt(limit) || 10;
+    const skip = (p - 1) * l;
+
     const where = {};
     
     if (nombre) {
@@ -70,15 +73,27 @@ class PrismaClientRepository {
     if (telefono) {
       where.telefono = { contains: telefono, mode: 'insensitive' };
     }
+    if (email) {
+      where.email = { contains: email, mode: 'insensitive' };
+    }
+    if (isActive !== null && isActive !== undefined) {
+      // accept boolean or string 'true'/'false' or '1'/'0'
+      if (typeof isActive === 'string') {
+        where.isActive = (isActive === 'true' || isActive === '1');
+      } else {
+        where.isActive = Boolean(isActive);
+      }
+    }
     if (assignedTo) {
-      where.assignedTo = parseInt(assignedTo);
+      const at = parseInt(assignedTo);
+      if (!Number.isNaN(at)) where.assignedTo = at;
     }
 
     const [clients, total] = await Promise.all([
       prisma.client.findMany({
         where,
         skip,
-        take: limit,
+        take: l,
         include: {
           cobrador: {
             select: {

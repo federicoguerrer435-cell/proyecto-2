@@ -11,10 +11,27 @@ const prisma = prismaBase.$extends({
       async create({ args, query }) {
         const userId = global.currentUserId || null;
 
+        // Añadir auditoría si aplica. Algunos modelos (ej. RefreshToken) no tienen
+        // campos createdBy/updatedBy, por lo que intentamos la operación y, en
+        // caso de error por argumentos desconocidos, reintentamos sin esos campos.
+        if (!args.data) args.data = {};
         if (!args.data.createdBy) args.data.createdBy = userId;
         if (!args.data.updatedBy) args.data.updatedBy = userId;
 
-        return query(args);
+        try {
+          return await query(args);
+        } catch (err) {
+          // Detectar error de validación de Prisma por campo desconocido
+          const msg = err && err.message ? err.message : '';
+          if (msg.includes('Unknown argument `createdBy`') || msg.includes('Unknown argument `updatedBy`')) {
+            // Eliminar los campos de auditoría y reintentar
+            delete args.data.createdBy;
+            delete args.data.updatedBy;
+            return query(args);
+          }
+
+          throw err;
+        }
       },
 
       async update({ args, query }) {
@@ -23,7 +40,17 @@ const prisma = prismaBase.$extends({
         if (!args.data) args.data = {};
         args.data.updatedBy = userId;
 
-        return query(args);
+        try {
+          return await query(args);
+        } catch (err) {
+          const msg = err && err.message ? err.message : '';
+          if (msg.includes('Unknown argument `updatedBy`')) {
+            delete args.data.updatedBy;
+            return query(args);
+          }
+
+          throw err;
+        }
       }
     }
   }

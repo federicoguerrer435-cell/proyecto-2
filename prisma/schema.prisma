@@ -88,6 +88,7 @@ model Role {
   createdBy   Int?     @map("created_by")
   updatedAt   DateTime @updatedAt @map("updated_at")
   updatedBy   Int?     @map("updated_by")
+  
 
   // Relaciones
   userRoles       UserRole[]
@@ -150,6 +151,9 @@ model Client {
   createdBy       Int?     @map("created_by")
   updatedAt       DateTime @updatedAt @map("updated_at")
   updatedBy       Int?     @map("updated_by")
+  isDeleted       Boolean  @default(false) @map("is_deleted")
+  deletedAt       DateTime?@map("deleted_at")
+
 
   // Relaciones
   cobrador      User?          @relation("CobradorClientes", fields: [assignedTo], references: [id], onDelete: SetNull)
@@ -177,6 +181,9 @@ model Credit {
   createdBy            Int?          @map("created_by")
   updatedAt            DateTime      @updatedAt @map("updated_at")
   updatedBy            Int?          @map("updated_by")
+  isDeleted            Boolean       @default(false) @map("is_deleted")
+  deletedAt            DateTime?     @map("deleted_at")
+
 
   // Relaciones
   client   Client    @relation(fields: [clienteId], references: [id], onDelete: Cascade)
@@ -204,6 +211,9 @@ model Payment {
   createdBy             Int?       @map("created_by")
   updatedAt             DateTime   @updatedAt @map("updated_at")
   updatedBy             Int?       @map("updated_by")
+  isDeleted             Boolean    @default(false) @map("is_deleted")
+  deletedAt             DateTime?  @map("deleted_at")
+
 
   // Relaciones
   credit  Credit   @relation(fields: [creditId], references: [id], onDelete: Cascade)

@@ -125,10 +125,14 @@ class PrismaClientRepository {
    * Elimina un cliente
    */
   async delete(id) {
-    return await prisma.client.delete({
-      where: { id }
-    });
-  }
+  return await prisma.client.update({
+    where: { id },
+    data: {
+      deletedAt: new Date()
+    }
+  });
+}
+
 
   /**
    * Busca clientes por nombre (búsqueda parcial)

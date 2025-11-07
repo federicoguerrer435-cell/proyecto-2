@@ -9,7 +9,8 @@ const { errorHandler, notFound } = require('./presentation/middlewares/errorHand
 // Rutas
 const authRoutes = require('./presentation/routes/authRoutes');
 const userRoutes = require('./presentation/routes/userRoutes');
-const clientRoutes = require('./presentation/routes/clientRoutes');
+  const clientRoutes = require('./presentation/routes/clientRoutes');
+  const creditRoutes = require('./presentation/routes/creditRoutes');
 
 /**
  * Application class
@@ -59,6 +60,7 @@ class App {
     this.app.use('/api/auth', authRoutes);
     this.app.use('/api/users', userRoutes);
   this.app.use('/api/clients', clientRoutes);
+  this.app.use('/api/credits', creditRoutes);
 
     // TODO: Agregar más rutas
     // this.app.use('/api/clients', clientRoutes);

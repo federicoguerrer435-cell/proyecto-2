@@ -210,6 +210,71 @@ async function main() {
 
   console.log(`✅ ${configs.length} configuraciones creadas`);
 
+  // 8. Crear algunos clientes de prueba y créditos asociados (idempotente)
+  console.log('\n👥 Creando clientes de prueba y créditos asociados...');
+
+  const sampleClients = [
+    { nombre: 'Cliente Uno', cedula: 'C10001', email: 'cliente1@example.com', telefono: '3001001001', direccion: 'Calle 10' },
+    { nombre: 'Cliente Dos', cedula: 'C10002', email: 'cliente2@example.com', telefono: '3001001002', direccion: 'Calle 11' },
+    { nombre: 'Cliente Tres', cedula: 'C10003', email: 'cliente3@example.com', telefono: '3001001003', direccion: 'Calle 12' }
+  ];
+
+  const createdClients = [];
+  for (const c of sampleClients) {
+    const client = await prisma.client.upsert({
+      where: { cedula: c.cedula },
+      update: {
+        nombre: c.nombre,
+        email: c.email,
+        telefono: c.telefono,
+        direccion: c.direccion,
+        updatedAt: new Date(),
+        updatedBy: adminUser.id
+      },
+      create: {
+        nombre: c.nombre,
+        cedula: c.cedula,
+        email: c.email,
+        telefono: c.telefono,
+        direccion: c.direccion,
+        assignedTo: adminUser.id,
+        createdAt: new Date(),
+        createdBy: adminUser.id
+      }
+    });
+    createdClients.push(client);
+  }
+
+  console.log(`✅ ${createdClients.length} clientes asegurados`);
+
+  // Crear créditos de ejemplo para los clientes (si no existen)
+  const now = Date.now();
+  let creditCount = 0;
+  for (let i = 0; i < createdClients.length; i++) {
+    const client = createdClients[i];
+    const numeroCredito = `CRE-${new Date().getFullYear()}-${now}-${i+1}`;
+
+    const existing = await prisma.credit.findUnique({ where: { numeroCredito } });
+    if (!existing) {
+      await prisma.credit.create({
+        data: {
+          numeroCredito,
+          clienteId: client.id,
+          montoPrincipal: '1000000.00',
+          cuotas: 12,
+          tasaInteresAplicada: '0.2000',
+          fechaVencimiento: new Date(new Date().setMonth(new Date().getMonth() + 6)),
+          estado: 'ACTIVO',
+          createdAt: new Date(),
+          createdBy: adminUser.id
+        }
+      });
+      creditCount++;
+    }
+  }
+
+  console.log(`✅ ${creditCount} créditos creados (si no existían)`);
+
   console.log('\n🎉 Seed completado exitosamente!\n');
 }
 

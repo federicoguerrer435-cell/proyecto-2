@@ -2,9 +2,9 @@ const clientRepository = require('../../infrastructure/repositories/PrismaClient
 
 class ListClientsUseCase {
   async execute(filters = {}) {
-    const { page = 1, limit = 10, nombre, cedula, telefono, assignedTo, email, isActive } = filters;
+    const { page = 1, limit = 10, nombre, cedula, telefono, assignedTo, email, isActive, cursor } = filters;
 
-    const { clients, total } = await clientRepository.findAll({
+    const { clients, total, nextCursor } = await clientRepository.findAll({
       page,
       limit,
       nombre,
@@ -12,10 +12,11 @@ class ListClientsUseCase {
       telefono,
       assignedTo,
       email,
-      isActive
+      isActive,
+      cursor
     });
 
-    return { clients, total };
+    return { clients, total, nextCursor };
   }
 }
 

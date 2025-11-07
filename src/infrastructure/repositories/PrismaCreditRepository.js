@@ -152,10 +152,14 @@ class PrismaCreditRepository {
    * Elimina un crédito
    */
   async delete(id) {
-    return await prisma.credit.delete({
-      where: { id }
-    });
-  }
+  return await prisma.credit.update({
+    where: { id },
+    data: {
+      deletedAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+}
 
   /**
    * Obtiene créditos próximos a vencer (para recordatorios)

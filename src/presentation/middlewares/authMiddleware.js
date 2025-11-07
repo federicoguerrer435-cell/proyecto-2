@@ -27,11 +27,13 @@ const authMiddleware = async (req, res, next) => {
 
     const token = parts[1];
 
-    // Verify token
+    // Verify atoken
     const decoded = jwtService.verifyToken(token);
     
     // Attach user data to request
     req.user = decoded;
+    global.currentUserId = decoded.id;
+
     
     next();
   } catch (error) {

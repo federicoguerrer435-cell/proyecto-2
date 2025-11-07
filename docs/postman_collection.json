@@ -1,0 +1,472 @@
+{
+  "info": {
+    "name": "Creditos Backend - Auth, Users & Clients",
+    "description": "Colección para probar endpoints de autenticación, usuarios y CRUD de clientes (importar en Postman).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+            "exec": [
+              "// Basic assertions",
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test('Response has data array', function () { pm.expect(json.data).to.be.an('array'); });",
+              "pm.test('Response meta has total', function () { pm.expect(json.meta).to.have.property('total'); });",
+              "// Capture sample nombre and nextCursor for subsequent requests",
+              "if (json && json.data && json.data.length > 0 && json.data[0].client && json.data[0].client.nombre) { pm.environment.set('sample_credit_nombre', json.data[0].client.nombre); console.log('sample_credit_nombre set', json.data[0].client.nombre); }",
+              "if (json && json.meta && json.meta.nextCursor) { pm.environment.set('credits_nextCursor', json.meta.nextCursor + ''); console.log('credits_nextCursor set', json.meta.nextCursor); }",
+              "if (json && json.nextCursor) { pm.environment.set('credits_nextCursor', json.nextCursor + ''); console.log('credits_nextCursor set', json.nextCursor); }"
+            ],
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              {
+                "info": {
+                  "name": "Creditos Backend - Collection",
+                  "description": "Colección con pruebas para auth, clients y credits (incluye tests para paginación cursor).",
+                  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+                  "version": "1.0.2"
+                },
+                "item": [
+                  {
+                    "name": "Auth - Admin Login",
+                    "request": {
+                      "method": "POST",
+                      "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                      "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}" },
+                      "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+                    },
+                    "event": [
+                      {
+                        "listen": "test",
+                        "script": {
+                          "type": "text/javascript",
+                          "exec": [
+                            "const json = pm.response.json();",
+                            "pm.test('Login should return 200', () => pm.response.to.have.status(200));",
+                            "if (json && json.data) {",
+                            "  pm.environment.set('accessToken', json.data.accessToken || json.data.access_token || '');",
+                            "  pm.environment.set('refreshToken', json.data.refreshToken || json.data.refresh_token || '');",
+                            "  console.log('accessToken set');",
+                            "}"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+
+                  {
+                    "name": "Credits - List",
+                    "request": {
+                      "method": "GET",
+                      "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+                      "url": { "raw": "{{base_url}}/api/credits?limit=10&page=1", "host": ["{{base_url}}"], "path": ["api","credits"], "query": [ { "key": "limit", "value": "10" }, { "key": "page", "value": "1" } ] }
+                    },
+                    "event": [
+                      {
+                        "listen": "test",
+                        "script": {
+                          "type": "text/javascript",
+                          "exec": [
+                            "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                            "const json = pm.response.json();",
+                            "pm.test('Response has data array', function () { pm.expect(json.data).to.be.an('array'); });",
+                            "pm.test('Response meta has total', function () { pm.expect(json.meta).to.have.property('total'); });",
+                            "if (json && json.data && json.data.length > 0 && json.data[0].client && json.data[0].client.nombre) { pm.environment.set('sample_credit_nombre', json.data[0].client.nombre); console.log('sample_credit_nombre set', json.data[0].client.nombre); }",
+                            "if (json && json.meta && json.meta.nextCursor) { pm.environment.set('credits_nextCursor', json.meta.nextCursor + ''); console.log('credits_nextCursor set', json.meta.nextCursor); }",
+                            "if (json && json.nextCursor) { pm.environment.set('credits_nextCursor', json.nextCursor + ''); console.log('credits_nextCursor set', json.nextCursor); }"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+
+                  {
+                    "name": "Credits - Filter by Nombre (partial)",
+                    "request": {
+                      "method": "GET",
+                      "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+                      "url": { "raw": "{{base_url}}/api/credits?limit=10&nombre={{sample_credit_nombre}}", "host": ["{{base_url}}"], "path": ["api","credits"], "query": [ { "key": "limit", "value": "10" }, { "key": "nombre", "value": "{{sample_credit_nombre}}" } ] }
+                    },
+                    "event": [
+                      {
+                        "listen": "test",
+                        "script": {
+                          "type": "text/javascript",
+                          "exec": [
+                            "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                            "const json = pm.response.json();",
+                            "pm.test('Filtered response has data array', function () { pm.expect(json.data).to.be.an('array'); });",
+                            "pm.test('Filtered meta has total', function () { pm.expect(json.meta).to.have.property('total'); });"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+
+                  {
+                    "name": "Credits - Next Page (cursor)",
+                    "request": {
+                      "method": "GET",
+                      "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+                      "url": { "raw": "{{base_url}}/api/credits?limit=10&cursor={{credits_nextCursor}}", "host": ["{{base_url}}"], "path": ["api","credits"], "query": [ { "key": "limit", "value": "10" }, { "key": "cursor", "value": "{{credits_nextCursor}}" } ] }
+                    },
+                    "event": [
+                      {
+                        "listen": "test",
+                        "script": {
+                          "type": "text/javascript",
+                          "exec": [
+                            "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                            "const json = pm.response.json();",
+                            "pm.test('Cursor page returns array', function () { pm.expect(json.data).to.be.an('array'); });",
+                            "pm.test('Cursor page meta has total', function () { pm.expect(json.meta).to.have.property('total'); });",
+                            "if (json && json.meta && json.meta.nextCursor) { pm.environment.set('credits_nextCursor', json.meta.nextCursor + ''); console.log('credits_nextCursor updated', json.meta.nextCursor); }"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+
+                  {
+                    "name": "Clients - Create (dynamic cedula)",
+                    "request": {
+                      "method": "POST",
+                      "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+                      "body": { "mode": "raw", "raw": "{\\n  \\\"nombre\\\": \\\"Cliente Prueba\\\",\\n  \\\"cedula\\\": \\\"{{client_cedula}}\\\",\\n  \\\"email\\\": \\\"cliente.prueba@example.com\\\",\\n  \\\"telefono\\\": \\\"3000000000\\\",\\n  \\\"direccion\\\": \\\"Calle 1 #2-3\\\"\\n}" },
+                      "url": { "raw": "{{base_url}}/api/clients", "host": ["{{base_url}}"], "path": ["api","clients"] }
+                    },
+                    "event": [
+                      {
+                        "listen": "prerequest",
+                        "script": {
+                          "type": "text/javascript",
+                          "exec": [
+                            "const cedula = 'C' + Date.now().toString().slice(-8);",
+                            "pm.environment.set('client_cedula', cedula);",
+                            "console.log('client_cedula set to', cedula);"
+                          ]
+                        }
+                      },
+                      {
+                        "listen": "test",
+                        "script": {
+                          "type": "text/javascript",
+                          "exec": [
+                            "const json = pm.response.json();",
+                            "pm.test('Create client returns 201 or 409', function () { pm.expect([201,409]).to.include(pm.response.code); });",
+                            "if (pm.response.code === 201 && json && json.data) { pm.environment.set('client_id', json.data.id + ''); pm.environment.set('client_cedula', json.data.cedula || pm.environment.get('client_cedula')); }",
+                            "if (pm.response.code === 409) { try { const body = pm.response.json(); if (body.field) pm.environment.set('client_conflict_field', body.field); } catch(e) {} }"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+
+                  {
+                    "name": "Clients - List",
+                    "request": {
+                      "method": "GET",
+                      "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+                      "url": { "raw": "{{base_url}}/api/clients?limit=10&page=1", "host": ["{{base_url}}"], "path": ["api","clients"], "query": [ { "key": "limit", "value": "10" }, { "key": "page", "value": "1" } ] }
+                    },
+                    "event": [
+                      {
+                        "listen": "test",
+                        "script": {
+                          "type": "text/javascript",
+                          "exec": [
+                            "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                            "const json = pm.response.json();",
+                            "pm.test('Clients response has data array', function () { pm.expect(json.data).to.be.an('array'); });",
+                            "pm.test('Clients meta has total', function () { pm.expect(json.meta).to.have.property('total'); })"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+              "  pm.environment.set('test_email', json.data.user.email || '{{test_email}}');",
+              "  pm.environment.set('user_id', json.data.user.id + '');",
+              "  console.log('test_email and user_id set');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Credits - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"client_id\": {{client_id}},\n  \"monto\": \"250000.00\",\n  \"plazo\": 6,\n  \"tasa\": 0.15,\n  \"cuotas\": 6,\n  \"tipo_credito\": \"PERSONAL\",\n  \"nota\": \"Solicitud creada desde Postman\",\n  \"created_by\": {{user_id}}\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/credits", "host": ["{{base_url}}"], "path": ["api","credits"] }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Ensure client_id is set. If not, try sample or client_id from previous steps",
+              "if (!pm.environment.get('client_id')) {",
+              "  if (pm.environment.get('sample_client_id')) pm.environment.set('client_id', pm.environment.get('sample_client_id'));",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Create credit returns 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.test('Response contains credit data', function () { pm.expect(json.data).to.have.property('id'); pm.expect(json.data).to.have.property('numeroCredito'); });",
+              "if (json && json.data) { pm.environment.set('credit_id', json.data.id + ''); pm.environment.set('credit_numero', json.data.numeroCredito || ''); }"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Credits - Get by ID",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "url": { "raw": "{{base_url}}/api/credits/{{credit_id}}", "host": ["{{base_url}}"], "path": ["api","credits","{{credit_id}}"] }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.environment.get('credit_id')) { console.warn('credit_id not set — run Credits - Create first'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test('Response contains credit with requested id', function () { pm.expect(json.data).to.have.property('id'); if (pm.environment.get('credit_id')) pm.expect(json.data.id + '').to.eql(pm.environment.get('credit_id')); });"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Auth - User Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json && json.data) {",
+              "  pm.environment.set('accessToken', json.data.accessToken || json.data.access_token || '');",
+              "  pm.environment.set('refreshToken', json.data.refreshToken || json.data.refresh_token || '');",
+              "  console.log('user accessToken set');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Auth - Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/auth/profile", "host": ["{{base_url}}"], "path": ["api","auth","profile"] }
+      },
+      "response": []
+    },
+
+    {
+      "name": "Auth - Refresh",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+        "url": { "raw": "{{base_url}}/api/auth/refresh", "host": ["{{base_url}}"], "path": ["api","auth","refresh"] }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json && json.data) {",
+              "  pm.environment.set('accessToken', json.data.accessToken || json.data.access_token || '');",
+              "  pm.environment.set('refreshToken', json.data.refreshToken || json.data.refresh_token || '');",
+              "  console.log('tokens refreshed');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Auth - Logout",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+        "url": { "raw": "{{base_url}}/api/auth/logout", "host": ["{{base_url}}"], "path": ["api","auth","logout"] }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": { "exec": [ "pm.environment.unset('refreshToken');" ], "type": "text/javascript" }
+        }
+      ]
+    },
+
+    {
+      "name": "Users - Create (admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Prueba Usuario\",\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\",\n  \"telefono\": \"300111222\",\n  \"roleIds\": [2]\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api","users"] }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json && json.data) {",
+              "  pm.environment.set('user_id', json.data.id + '');",
+              "  pm.environment.set('test_email', json.data.email || '{{test_email}}');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Users - List",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "url": { "raw": "{{base_url}}/api/users?limit=10&page=1", "host": ["{{base_url}}"], "path": ["api","users"], "query": [ { "key": "limit", "value": "10" }, { "key": "page", "value": "1" } ] }
+      },
+      "response": []
+    },
+
+    {
+      "name": "Users - Get by ID",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "url": { "raw": "{{base_url}}/api/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["api","users","{{user_id}}"] }
+      },
+      "response": []
+    },
+
+    {
+      "name": "Users - Update",
+      "request": {
+        "method": "PUT",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Nombre Actualizado\",\n  \"telefono\": \"300999888\"\n}" },
+        "url": { "raw": "{{base_url}}/api/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["api","users","{{user_id}}"] }
+      },
+      "response": []
+    },
+
+    {
+      "name": "Users - Assign Role",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"roleId\": 2\n}" },
+        "url": { "raw": "{{base_url}}/api/users/{{user_id}}/roles", "host": ["{{base_url}}"], "path": ["api","users","{{user_id}}","roles"] }
+      },
+      "response": []
+    },
+
+    {
+      "name": "Users - Remove Role",
+      "request": {
+        "method": "DELETE",
+        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "url": { "raw": "{{base_url}}/api/users/{{user_id}}/roles/2", "host": ["{{base_url}}"], "path": ["api","users","{{user_id}}","roles","2"] }
+      },
+      "response": []
+    },
+
+    {
+      "name": "Users - Soft Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "url": { "raw": "{{base_url}}/api/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["api","users","{{user_id}}"] }
+      },
+      "response": []
+    },
+
+    {
+      "name": "Users - Create (non-admin attempt)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Bad Create\",\n  \"email\": \"bad_create@example.com\",\n  \"password\": \"BadPass1!\"\n}" },
+        "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api","users"] }
+      },
+      "response": []
+    }
+  ]
+}

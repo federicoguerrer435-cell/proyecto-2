@@ -56,9 +56,14 @@ class PrismaClientRepository {
   /**
    * Lista clientes con paginación y filtros
    */
-  async findAll({ page = 1, limit = 10, nombre, cedula, telefono, assignedTo }) {
-    const skip = (page - 1) * limit;
-    
+  async findAll({ page = 1, limit = 10, nombre, cedula, telefono, assignedTo, email, isActive = null, cursor = null }) {
+    // Coerce query params to numbers when they come as strings
+  const p = parseInt(page) || 1;
+  const l = parseInt(limit) || 10;
+  // support cursor-based pagination: cursor can be an id (number)
+  const cursorId = cursor ? parseInt(cursor) : null;
+  const skip = cursorId ? 0 : (p - 1) * l;
+
     const where = {};
     
     if (nombre) {
@@ -70,36 +75,65 @@ class PrismaClientRepository {
     if (telefono) {
       where.telefono = { contains: telefono, mode: 'insensitive' };
     }
+    if (email) {
+      where.email = { contains: email, mode: 'insensitive' };
+    }
+    if (isActive !== null && isActive !== undefined) {
+      // accept boolean or string 'true'/'false' or '1'/'0'
+      if (typeof isActive === 'string') {
+        where.isActive = (isActive === 'true' || isActive === '1');
+      } else {
+        where.isActive = Boolean(isActive);
+      }
+    }
     if (assignedTo) {
-      where.assignedTo = parseInt(assignedTo);
+      const at = parseInt(assignedTo);
+      if (!Number.isNaN(at)) where.assignedTo = at;
+    }
+
+    // Build findMany args with optional cursor
+    const findArgs = {
+      where,
+      include: {
+        cobrador: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true
+          }
+        },
+        _count: {
+          select: {
+            credits: true,
+            payments: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    };
+
+    if (cursorId) {
+      // keyset pagination: get items after the cursor (assuming createdAt desc)
+      findArgs.cursor = { id: cursorId };
+      findArgs.skip = 1;
+      findArgs.take = l;
+    } else {
+      findArgs.skip = skip;
+      findArgs.take = l;
     }
 
     const [clients, total] = await Promise.all([
-      prisma.client.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          cobrador: {
-            select: {
-              id: true,
-              nombre: true,
-              email: true
-            }
-          },
-          _count: {
-            select: {
-              credits: true,
-              payments: true
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      }),
+      prisma.client.findMany(findArgs),
       prisma.client.count({ where })
     ]);
 
-    return { clients, total };
+    // compute nextCursor if using cursor pagination
+    let nextCursor = null;
+    if (clients.length === l) {
+      nextCursor = clients[clients.length - 1].id;
+    }
+
+    return { clients, total, nextCursor };
   }
 
   /**

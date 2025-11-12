@@ -1,0 +1,151 @@
+{
+  "info": {
+    "name": "Creditos Backend - Full Test Collection",
+    "description": "Colección con pruebas E2E para autenticación, usuarios, clientes y créditos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Auth - Admin Login",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\"email\":\"{{admin_email}}\",\"password\":\"{{admin_password}}\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "if (json && json.data) {",
+              "  pm.environment.set('accessToken', json.data.accessToken || json.data.access_token || '');",
+              "  pm.environment.set('refreshToken', json.data.refreshToken || json.data.refresh_token || '');",
+              "  if (json.data.user && json.data.user.id) pm.environment.set('user_id', json.data.user.id+'');",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Auth - Profile",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "url": { "raw": "{{base_url}}/api/auth/profile", "host": ["{{base_url}}"], "path": ["api","auth","profile"] }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('Profile 200', () => pm.response.to.have.status(200));" ] } } ]
+    },
+
+    {
+      "name": "Auth - Refresh",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\"refreshToken\":\"{{refreshToken}}\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/refresh", "host": ["{{base_url}}"], "path": ["api","auth","refresh"] }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('Refresh 200', () => pm.response.to.have.status(200)); const j=pm.response.json(); if(j && j.data){ pm.environment.set('accessToken', j.data.accessToken || j.data.access_token || ''); pm.environment.set('refreshToken', j.data.refreshToken || j.data.refresh_token || ''); }" ] } } ]
+    },
+
+    {
+      "name": "Auth - Logout",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\"refreshToken\":\"{{refreshToken}}\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/logout", "host": ["{{base_url}}"], "path": ["api","auth","logout"] }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('Logout 200 or 204', () => pm.expect([200,204]).to.include(pm.response.code)); pm.environment.unset('refreshToken');" ] } } ]
+    },
+
+    {
+      "name": "Users - Create (admin)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "body": { "mode": "raw", "raw": "{\"nombre\":\"Prueba Usuario\",\"email\":\"{{test_email}}\",\"password\":\"{{test_password}}\",\"telefono\":\"300111222\",\"roleIds\":[2]}" },
+        "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api","users"] }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('Users Create 201 or 409', () => pm.expect([201,409]).to.include(pm.response.code)); const j=pm.response.json(); if(j && j.data){ pm.environment.set('user_id', j.data.id+''); pm.environment.set('test_email', j.data.email || pm.environment.get('test_email')); }" ] } } ]
+    },
+
+    {
+      "name": "Users - List",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "url": { "raw": "{{base_url}}/api/users?limit=10&page=1", "host": ["{{base_url}}"], "path": ["api","users"], "query": [ { "key": "limit", "value": "10" }, { "key": "page", "value": "1" } ] }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('Users List 200', () => pm.response.to.have.status(200));" ] } } ]
+    },
+
+    {
+      "name": "Clients - Create",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "body": { "mode": "raw", "raw": "{\"nombre\":\"Cliente Prueba\",\"cedula\":\"{{client_cedula}}\",\"email\":\"cliente.prueba@example.com\",\"telefono\":\"3000000000\",\"direccion\":\"Calle 1 #2-3\"}" },
+        "url": { "raw": "{{base_url}}/api/clients", "host": ["{{base_url}}"], "path": ["api","clients"] }
+      },
+      "event": [ { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [ "if(!pm.environment.get('client_cedula')){ pm.environment.set('client_cedula','C'+Date.now().toString().slice(-8)); }" ] } }, { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('Clients Create 201 or 409', () => pm.expect([201,409]).to.include(pm.response.code)); const j=pm.response.json(); if(j && j.data){ pm.environment.set('client_id', j.data.id+''); pm.environment.set('client_cedula', j.data.cedula || pm.environment.get('client_cedula')); }" ] } } ]
+    },
+
+    {
+      "name": "Clients - List",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "url": { "raw": "{{base_url}}/api/clients?limit=10&page=1", "host": ["{{base_url}}"], "path": ["api","clients"], "query": [ { "key": "limit", "value": "10" }, { "key": "page", "value": "1" } ] }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('Clients List 200', () => pm.response.to.have.status(200)); const j=pm.response.json(); if(j && j.data && j.data.length>0 && j.data[0].id){ pm.environment.set('sample_client_id', j.data[0].id+''); }" ] } } ]
+    },
+
+    {
+      "name": "Credits - Create",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "body": { "mode": "raw", "raw": "{\"client_id\":{{client_id}},\"monto\":\"250000.00\",\"plazo\":6,\"tasa\":0.15,\"cuotas\":6,\"tipo_credito\":\"PERSONAL\",\"nota\":\"Solicitud creada desde Postman\",\"created_by\":{{user_id}}}" },
+        "url": { "raw": "{{base_url}}/api/credits", "host": ["{{base_url}}"], "path": ["api","credits"] }
+      },
+      "event": [ { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [ "if(!pm.environment.get('client_id')){ if(pm.environment.get('sample_client_id')) pm.environment.set('client_id', pm.environment.get('sample_client_id')); else console.warn('client_id not set'); }" ] } }, { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('Create credit 201', () => pm.response.to.have.status(201)); const j=pm.response.json(); if(j && j.data){ pm.environment.set('credit_id', j.data.id+''); pm.environment.set('credit_numero', j.data.numeroCredito || ''); }" ] } } ]
+    },
+
+    {
+      "name": "Credits - List",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "url": { "raw": "{{base_url}}/api/credits?limit=10&page=1", "host": ["{{base_url}}"], "path": ["api","credits"], "query": [ { "key": "limit", "value": "10" }, { "key": "page", "value": "1" } ] }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('Credits List 200', () => pm.response.to.have.status(200)); const j=pm.response.json(); if(j && j.meta && j.meta.nextCursor) pm.environment.set('credits_nextCursor', j.meta.nextCursor+'');" ] } } ]
+    },
+
+    {
+      "name": "Credits - Next Page (cursor)",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "url": { "raw": "{{base_url}}/api/credits?limit=10&cursor={{credits_nextCursor}}", "host": ["{{base_url}}"], "path": ["api","credits"], "query": [ { "key": "limit", "value": "10" }, { "key": "cursor", "value": "{{credits_nextCursor}}" } ] }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('Cursor page 200', () => pm.response.to.have.status(200));" ] } } ]
+    },
+
+    {
+      "name": "Credits - Get by ID",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+        "url": { "raw": "{{base_url}}/api/credits/{{credit_id}}", "host": ["{{base_url}}"], "path": ["api","credits","{{credit_id}}"] }
+      },
+      "event": [ { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [ "if(!pm.environment.get('credit_id')) console.warn('credit_id not set');" ] } }, { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('Get credit 200', () => pm.response.to.have.status(200));" ] } } ]
+    }
+  ]
+}

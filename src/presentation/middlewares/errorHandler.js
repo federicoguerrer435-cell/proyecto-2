@@ -44,6 +44,7 @@ const errorHandler = (err, req, res, next) => {
     success: false,
     error: message,
     code: err.code || 'INTERNAL_ERROR',
+    ...(err.field && { field: err.field }),
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 };

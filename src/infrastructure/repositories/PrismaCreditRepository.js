@@ -74,11 +74,14 @@ class PrismaCreditRepository {
   /**
    * Lista créditos con paginación y filtros
    */
-  async findAll({ page = 1, limit = 10, estado, cobradorId, clienteId, fechaDesde, fechaHasta }) {
-    const skip = (page - 1) * limit;
-    
+  async findAll({ page = 1, limit = 10, estado, cobradorId, clienteId, fechaDesde, fechaHasta, nombre, cedula, telefono, cursor = null }) {
+    const p = parseInt(page) || 1;
+    const l = parseInt(limit) || 10;
+    const cursorId = cursor ? parseInt(cursor) : null;
+    const skip = cursorId ? 0 : (p - 1) * l;
+
     const where = {};
-    
+
     if (estado) {
       where.estado = estado;
     }
@@ -86,9 +89,7 @@ class PrismaCreditRepository {
       where.clienteId = parseInt(clienteId);
     }
     if (cobradorId) {
-      where.client = {
-        assignedTo: parseInt(cobradorId)
-      };
+      where.client = { assignedTo: parseInt(cobradorId) };
     }
     if (fechaDesde || fechaHasta) {
       where.createdAt = {};
@@ -100,39 +101,62 @@ class PrismaCreditRepository {
       }
     }
 
-    const [credits, total] = await Promise.all([
-      prisma.credit.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          client: {
-            select: {
-              id: true,
-              nombre: true,
-              cedula: true,
-              telefono: true,
-              assignedTo: true,
-              cobrador: {
-                select: {
-                  id: true,
-                  nombre: true
-                }
+    // client related filters
+    if (nombre || cedula || telefono) {
+      where.client = where.client || {};
+      where.client = {
+        ...where.client,
+        ...(nombre ? { nombre: { contains: nombre, mode: 'insensitive' } } : {}),
+        ...(cedula ? { cedula: cedula } : {}),
+        ...(telefono ? { telefono: { contains: telefono } } : {})
+      };
+    }
+
+    const findArgs = {
+      where,
+      include: {
+        client: {
+          select: {
+            id: true,
+            nombre: true,
+            cedula: true,
+            telefono: true,
+            assignedTo: true,
+            cobrador: {
+              select: {
+                id: true,
+                nombre: true
               }
-            }
-          },
-          _count: {
-            select: {
-              payments: true
             }
           }
         },
-        orderBy: { createdAt: 'desc' }
-      }),
+        _count: {
+          select: {
+            payments: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    };
+
+    if (cursorId) {
+      findArgs.cursor = { id: cursorId };
+      findArgs.skip = 1;
+      findArgs.take = l;
+    } else {
+      findArgs.skip = skip;
+      findArgs.take = l;
+    }
+
+    const [credits, total] = await Promise.all([
+      prisma.credit.findMany(findArgs),
       prisma.credit.count({ where })
     ]);
 
-    return { credits, total };
+    let nextCursor = null;
+    if (credits.length === l) nextCursor = credits[credits.length - 1].id;
+
+    return { credits, total, nextCursor };
   }
 
   /**

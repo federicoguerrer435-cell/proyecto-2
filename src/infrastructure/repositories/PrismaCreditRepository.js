@@ -63,6 +63,7 @@ class PrismaCreditRepository {
         clienteId,
         OR: [
           { estado: 'ACTIVO' },
+          { estado: 'PENDIENTE' },
           { estado: 'INCUMPLIDO' }
         ]
       }

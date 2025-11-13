@@ -5,6 +5,8 @@ const asyncHandler = require('../middlewares/asyncHandler');
 const listCreditsUseCase = require('../../application/use-cases/ListCreditsUseCase');
 const createCreditUseCase = require('../../application/use-cases/CreateCreditUseCase');
 const getCreditByIdUseCase = require('../../application/use-cases/GetCreditByIdUseCase');
+const approveCreditUseCase = require('../../application/use-cases/ApproveCreditUseCase');
+const rejectCreditUseCase = require('../../application/use-cases/RejectCreditUseCase');
 
 class CreditsController {
   index = [
@@ -81,6 +83,26 @@ class CreditsController {
     validate,
     asyncHandler(async (req, res) => {
       const credit = await getCreditByIdUseCase.execute(req.params.id);
+      res.json({ success: true, data: credit });
+    })
+  ];
+
+  approve = [
+    param('id').isInt().withMessage('ID inválido'),
+    validate,
+    asyncHandler(async (req, res) => {
+      const approvedBy = req.user?.userId || req.user?.id || null;
+      const credit = await approveCreditUseCase.execute(parseInt(req.params.id), approvedBy);
+      res.json({ success: true, data: credit });
+    })
+  ];
+
+  reject = [
+    param('id').isInt().withMessage('ID inválido'),
+    validate,
+    asyncHandler(async (req, res) => {
+      const rejectedBy = req.user?.userId || req.user?.id || null;
+      const credit = await rejectCreditUseCase.execute(parseInt(req.params.id), rejectedBy);
       res.json({ success: true, data: credit });
     })
   ];

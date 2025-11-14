@@ -1,0 +1,51 @@
+@api_url = http://localhost:3000/api
+@auth_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInJvbGUiOiJBRE1JTklTVFJVRE9SIiwiaWF0IjoxNzMyNTY4NDI5LCJleHAiOjE3MzI1NzIwMjl9.e0zY1X-s-21H0-M3XQQ-C-i_1-Y3-H5-h1-Z3-Y2-O
+
+###
+
+# @name login
+POST {{api_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password"
+}
+
+###
+
+# @name create_credit
+POST {{api_url}}/credits
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "client_id": 1,
+  "monto": 1000,
+  "cuotas": 12,
+  "tasa": 0.1,
+  "plazo": 12,
+  "tipo_credito": "PERSONAL",
+  "nota": "Crédito de prueba"
+}
+
+###
+
+# @name approve_credit
+POST {{api_url}}/credits/1/approve
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+###
+
+# @name reject_credit
+POST {{api_url}}/credits/1/reject
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+###
+
+# @name get_dashboard_metrics
+GET {{api_url}}/dashboard
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}

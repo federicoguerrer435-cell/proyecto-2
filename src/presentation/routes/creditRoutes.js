@@ -4,7 +4,6 @@ const creditsController = require('../controllers/CreditsController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/authorize');
 
-// Base: /api/credits
 router.use(authMiddleware);
 
 /**
@@ -67,5 +66,53 @@ router.post('/', authorize('credits.create'), creditsController.store);
  *         description: Crédito obtenido exitosamente
  */
 router.get('/:id', authorize('credits.read'), creditsController.show);
+
+/**
+ * @swagger
+ * /credits/{id}/approve:
+ *   post:
+ *     summary: Aprueba un crédito
+ *     tags: [Credits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Crédito aprobado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.post('/:id/approve', authorize('credits.approve'), creditsController.approve);
+
+/**
+ * @swagger
+ * /credits/{id}/reject:
+ *   post:
+ *     summary: Rechaza un crédito
+ *     tags: [Credits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Crédito rechazado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.post('/:id/reject', authorize('credits.reject'), creditsController.reject);
 
 module.exports = router;

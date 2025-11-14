@@ -4,7 +4,6 @@ const clientsController = require('../controllers/ClientsController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/authorize');
 
-// Base: /api/clients
 router.use(authMiddleware);
 
 /**

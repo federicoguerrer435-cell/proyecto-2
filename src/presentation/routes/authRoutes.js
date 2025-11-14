@@ -73,6 +73,6 @@ router.post('/login', authController.login);
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  */
-router.post('/refresh-token', authController.refreshToken);
+router.post('/refresh-token', authController.refresh);
 
 module.exports = router;

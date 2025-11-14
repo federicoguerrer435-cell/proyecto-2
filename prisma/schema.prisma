@@ -41,6 +41,7 @@ enum MedioNotificacion {
   WHATSAPP
   EMAIL
   SMS
+  TELEGRAM
 }
 
 enum EstadoEnvio {

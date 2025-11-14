@@ -5,127 +5,198 @@ const { authorize } = require('../middlewares/authorize');
 const usersController = require('../controllers/UsersController');
 
 /**
- * Rutas de Usuarios
- * Base path: /api/users
- * 
- * Todas las rutas requieren autenticación (authMiddleware)
- * Cada ruta tiene su propio control de permisos (authorize)
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: Endpoints para la gestión de usuarios
  */
-
-// Aplicar middleware de autenticación a todas las rutas
 router.use(authMiddleware);
 
 /**
- * @route   GET /api/users
- * @desc    Listar usuarios con paginación y filtros
- * @access  Requiere permiso 'users.read'
- * @query   {number} page - Número de página (default: 1)
- * @query   {number} limit - Límite por página (default: 10, max: 100)
- * @query   {string} search - Búsqueda por nombre o email
- * @query   {boolean} isActive - Filtrar por estado activo
- * @query   {number} roleId - Filtrar por rol
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Lista todos los usuarios con filtros y paginación
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lista de usuarios
  */
-router.get(
-  '/',
-  authorize('users.read'),
-  usersController.index
-);
+router.get('/', authorize('users.read'), usersController.index);
 
 /**
- * @route   GET /api/users/:id
- * @desc    Obtener un usuario por ID
- * @access  Requiere permiso 'users.read'
- * @param   {number} id - ID del usuario
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Obtiene un usuario por su ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Datos del usuario
  */
-router.get(
-  '/:id',
-  authorize('users.read'),
-  usersController.show
-);
+router.get('/:id', authorize('users.read'), usersController.show);
 
 /**
- * @route   POST /api/users
- * @desc    Crear un nuevo usuario
- * @access  Requiere permiso 'users.create'
- * @body    {string} nombre - Nombre del usuario (requerido)
- * @body    {string} email - Email del usuario (requerido, único)
- * @body    {string} password - Contraseña del usuario (requerido, min: 6)
- * @body    {string} telefono - Teléfono del usuario (opcional)
- * @body    {number[]} roleIds - IDs de roles a asignar (opcional)
+ * @swagger
+ * /users:
+ *   post:
+ *     summary: Crea un nuevo usuario
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       201:
+ *         description: Usuario creado
  */
-router.post(
-  '/',
-  authorize('users.create'),
-  usersController.store
-);
+router.post('/', authorize('users.create'), usersController.store);
 
 /**
- * @route   PUT /api/users/:id
- * @desc    Actualizar un usuario existente
- * @access  Requiere permiso 'users.update'
- * @param   {number} id - ID del usuario
- * @body    {string} nombre - Nombre del usuario (opcional)
- * @body    {string} email - Email del usuario (opcional)
- * @body    {string} password - Nueva contraseña (opcional, min: 6)
- * @body    {string} telefono - Teléfono del usuario (opcional)
- * @body    {boolean} isActive - Estado activo del usuario (opcional)
- * @body    {number[]} roleIds - IDs de roles a asignar (opcional)
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Actualiza un usuario existente
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       200:
+ *         description: Usuario actualizado
  */
-router.put(
-  '/:id',
-  authorize('users.update'),
-  usersController.update
-);
+router.put('/:id', authorize('users.update'), usersController.update);
 
 /**
- * @route   DELETE /api/users/:id
- * @desc    Desactivar un usuario (soft delete)
- * @access  Requiere permiso 'users.delete'
- * @param   {number} id - ID del usuario
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Desactiva un usuario (soft delete)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Usuario desactivado
  */
-router.delete(
-  '/:id',
-  authorize('users.delete'),
-  usersController.destroy
-);
+router.delete('/:id', authorize('users.delete'), usersController.destroy);
 
 /**
- * @route   DELETE /api/users/:id/hard
- * @desc    Eliminar permanentemente un usuario (hard delete)
- * @access  Requiere permiso 'users.delete'
- * @param   {number} id - ID del usuario
- * @note    Solo usar en casos especiales, elimina todos los datos relacionados
+ * @swagger
+ * /users/{id}/hard:
+ *   delete:
+ *     summary: Elimina permanentemente un usuario (hard delete)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Usuario eliminado permanentemente
  */
-router.delete(
-  '/:id/hard',
-  authorize('users.delete'),
-  usersController.hardDestroy
-);
+router.delete('/:id/hard', authorize('users.delete'), usersController.hardDestroy);
 
 /**
- * @route   POST /api/users/:id/roles
- * @desc    Asignar un rol a un usuario
- * @access  Requiere permiso 'users.update'
- * @param   {number} id - ID del usuario
- * @body    {number} roleId - ID del rol a asignar
+ * @swagger
+ * /users/{id}/roles:
+ *   post:
+ *     summary: Asigna un rol a un usuario
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               roleId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Rol asignado
  */
-router.post(
-  '/:id/roles',
-  authorize('users.update'),
-  usersController.assignRole
-);
+router.post('/:id/roles', authorize('users.update'), usersController.assignRole);
 
 /**
- * @route   DELETE /api/users/:id/roles/:roleId
- * @desc    Remover un rol de un usuario
- * @access  Requiere permiso 'users.update'
- * @param   {number} id - ID del usuario
- * @param   {number} roleId - ID del rol a remover
+ * @swagger
+ * /users/{id}/roles/{roleId}:
+ *   delete:
+ *     summary: Remueve un rol de un usuario
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: roleId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Rol removido
  */
-router.delete(
-  '/:id/roles/:roleId',
-  authorize('users.update'),
-  usersController.removeRole
-);
+router.delete('/:id/roles/:roleId', authorize('users.update'), usersController.removeRole);
 
 module.exports = router;

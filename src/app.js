@@ -9,8 +9,15 @@ const { errorHandler, notFound } = require('./presentation/middlewares/errorHand
 // Rutas
 const authRoutes = require('./presentation/routes/authRoutes');
 const userRoutes = require('./presentation/routes/userRoutes');
-  const clientRoutes = require('./presentation/routes/clientRoutes');
-  const creditRoutes = require('./presentation/routes/creditRoutes');
+const clientRoutes = require('./presentation/routes/clientRoutes');
+const creditRoutes = require('./presentation/routes/creditRoutes');
+const paymentRoutes = require('./presentation/routes/paymentRoutes');
+const dashboardRoutes = require('./presentation/routes/dashboardRoutes');
+const reportRoutes = require('./presentation/routes/reportRoutes');
+
+// Swagger
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
 /**
  * Application class
@@ -56,18 +63,17 @@ class App {
       });
     });
 
+    // Swagger UI
+    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
     // API routes
     this.app.use('/api/auth', authRoutes);
     this.app.use('/api/users', userRoutes);
-  this.app.use('/api/clients', clientRoutes);
-  this.app.use('/api/credits', creditRoutes);
-
-    // TODO: Agregar más rutas
-    // this.app.use('/api/clients', clientRoutes);
-    // this.app.use('/api/credits', creditRoutes);
-    // this.app.use('/api/payments', paymentRoutes);
-    // this.app.use('/api/dashboard', dashboardRoutes);
-    // this.app.use('/api/reports', reportRoutes);
+    this.app.use('/api/clients', clientRoutes);
+    this.app.use('/api/credits', creditRoutes);
+    this.app.use('/api/payments', paymentRoutes);
+    this.app.use('/api/dashboard', dashboardRoutes);
+    this.app.use('/api/reports', reportRoutes);
 
     // 404 handler
     this.app.use(notFound);

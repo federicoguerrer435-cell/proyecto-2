@@ -31,6 +31,17 @@ router.use(authMiddleware);
  *     responses:
  *       200:
  *         description: Calendario de pagos obtenido exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Credit'
  */
 router.get('/payment-schedule', authorize('reports.read'), reportsController.getPaymentSchedule);
 

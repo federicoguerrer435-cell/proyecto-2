@@ -1,43 +1,78 @@
 const express = require('express');
-const authController = require('../controllers/AuthController');
-const authMiddleware = require('../middlewares/authMiddleware');
-const { authorizeRole } = require('../middlewares/authorize');
-
 const router = express.Router();
+const authController = require('../controllers/AuthController');
 
 /**
- * @route   POST /api/auth/login
- * @desc    Login usuario y obtener access token + refresh token
- * @access  Public
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Endpoints para autenticación de usuarios
+ */
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Inicia sesión de un usuario
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: admin@creditos.com
+ *               password:
+ *                 type: string
+ *                 example: Admin123!
+ *     responses:
+ *       200:
+ *         description: Login exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       401:
+ *         description: Credenciales inválidas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  */
 router.post('/login', authController.login);
 
 /**
- * @route   POST /api/auth/refresh
- * @desc    Renovar access token usando refresh token
- * @access  Public
+ * @swagger
+ * /auth/refresh-token:
+ *   post:
+ *     summary: Refresca el token de acceso
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Token refrescado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       401:
+ *         description: Token de refresco inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  */
-router.post('/refresh', authController.refresh);
-
-/**
- * @route   POST /api/auth/logout
- * @desc    Logout y revocar refresh token
- * @access  Public
- */
-router.post('/logout', authController.logout);
-
-/**
- * @route   POST /api/auth/register
- * @desc    Registrar nuevo usuario (solo admin)
- * @access  Private (ADMIN)
- */
-router.post('/register', authMiddleware, authorizeRole('ADMIN'), authController.register);
-
-/**
- * @route   GET /api/auth/profile
- * @desc    Obtener perfil del usuario autenticado
- * @access  Private
- */
-router.get('/profile', authMiddleware, authController.profile);
+router.post('/refresh-token', authController.refreshToken);
 
 module.exports = router;

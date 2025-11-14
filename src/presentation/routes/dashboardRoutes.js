@@ -24,6 +24,10 @@ router.use(authMiddleware);
  *     responses:
  *       200:
  *         description: Métricas obtenidas exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  */
 router.get('/', authorize('dashboard.read'), dashboardController.getMetrics);
 

@@ -40,6 +40,10 @@ router.use(authMiddleware);
  *     responses:
  *       201:
  *         description: Pago registrado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  */
 router.post('/', authorize('payments.create'), paymentsController.store);
 

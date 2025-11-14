@@ -42,3 +42,10 @@ Authorization: Bearer {{auth_token}}
 POST {{api_url}}/credits/1/reject
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
+
+###
+
+# @name get_dashboard_metrics
+GET {{api_url}}/dashboard
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}

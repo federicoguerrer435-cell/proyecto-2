@@ -185,7 +185,7 @@ Gracias por su pago.
     // 9. Registrar notificación
     await prisma.notification.create({
       data: {
-        clienteId: client.id,
+        client: { connect: { id: client.id } },
         tipo: 'PAGO_REGISTRADO',
         mensaje,
         medio: 'WHATSAPP',

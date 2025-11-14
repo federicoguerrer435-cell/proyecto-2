@@ -17,7 +17,6 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "jobs:notify": "node src/jobs/notifyPayments.js",
     "jobs:notify:once": "node src/jobs/notifyPayments.js --once"
-
   },
   "keywords": [],
   "author": "",
@@ -34,7 +33,9 @@
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^3.0.3",
     "nodemailer": "^7.0.10",
-    "pdfkit": "^0.15.2"
+    "pdfkit": "^0.15.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.10",

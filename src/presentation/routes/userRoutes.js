@@ -3,8 +3,7 @@ const router = express.Router();
 const usersController = require('../controllers/UsersController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/authorize');
-
-router.use(authMiddleware);
+const usersController = require('../controllers/UsersController');
 
 /**
  * @swagger
@@ -12,29 +11,58 @@ router.use(authMiddleware);
  *   name: Users
  *   description: Endpoints para la gestión de usuarios
  */
+router.use(authMiddleware);
 
 /**
  * @swagger
  * /users:
  *   get:
- *     summary: Lista todos los usuarios
+ *     summary: Lista todos los usuarios con filtros y paginación
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
- *         description: Lista de usuarios obtenida exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/User'
+ *         description: Lista de usuarios
+ */
+router.get('/', authorize('users.read'), usersController.index);
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Obtiene un usuario por su ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Datos del usuario
+ */
+router.get('/:id', authorize('users.read'), usersController.show);
+
+/**
+ * @swagger
+ * /users:
  *   post:
  *     summary: Crea un nuevo usuario
  *     tags: [Users]
@@ -45,32 +73,44 @@ router.use(authMiddleware);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               nombre:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *               telefono:
- *                 type: string
+ *             $ref: '#/components/schemas/User'
  *     responses:
  *       201:
- *         description: Usuario creado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Usuario creado
  */
-router.get('/', authorize('users.read'), usersController.index);
 router.post('/', authorize('users.create'), usersController.store);
 
 /**
  * @swagger
  * /users/{id}:
- *   get:
- *     summary: Obtiene un usuario por ID
+ *   put:
+ *     summary: Actualiza un usuario existente
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       200:
+ *         description: Usuario actualizado
+ */
+router.put('/:id', authorize('users.update'), usersController.update);
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Desactiva un usuario (soft delete)
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -81,14 +121,36 @@ router.post('/', authorize('users.create'), usersController.store);
  *         schema:
  *           type: integer
  *     responses:
- *       200:
- *         description: Usuario obtenido exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- *   put:
- *     summary: Actualiza un usuario por ID
+ *       204:
+ *         description: Usuario desactivado
+ */
+router.delete('/:id', authorize('users.delete'), usersController.destroy);
+
+/**
+ * @swagger
+ * /users/{id}/hard:
+ *   delete:
+ *     summary: Elimina permanentemente un usuario (hard delete)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Usuario eliminado permanentemente
+ */
+router.delete('/:id/hard', authorize('users.delete'), usersController.hardDestroy);
+
+/**
+ * @swagger
+ * /users/{id}/roles:
+ *   post:
+ *     summary: Asigna un rol a un usuario
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -105,21 +167,19 @@ router.post('/', authorize('users.create'), usersController.store);
  *           schema:
  *             type: object
  *             properties:
- *               nombre:
- *                 type: string
- *               email:
- *                 type: string
- *               telefono:
- *                 type: string
+ *               roleId:
+ *                 type: integer
  *     responses:
  *       200:
- *         description: Usuario actualizado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Rol asignado
+ */
+router.post('/:id/roles', authorize('users.update'), usersController.assignRole);
+
+/**
+ * @swagger
+ * /users/{id}/roles/{roleId}:
  *   delete:
- *     summary: Elimina un usuario por ID
+ *     summary: Remueve un rol de un usuario
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -129,16 +189,15 @@ router.post('/', authorize('users.create'), usersController.store);
  *         required: true
  *         schema:
  *           type: integer
+ *       - in: path
+ *         name: roleId
+ *         required: true
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
- *         description: Usuario eliminado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Rol removido
  */
-router.get('/:id', authorize('users.read'), usersController.show);
-router.put('/:id', authorize('users.update'), usersController.update);
-router.delete('/:id', authorize('users.delete'), usersController.destroy);
+router.delete('/:id/roles/:roleId', authorize('users.update'), usersController.removeRole);
 
 module.exports = router;

@@ -17,24 +17,19 @@ router.use(authMiddleware);
  * @swagger
  * /credits:
  *   get:
- *     summary: Lista todos los créditos
+ *     summary: Obtiene una lista de todos los créditos
  *     tags: [Credits]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de créditos obtenida exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Credit'
+ */
+router.get('/', authorize('credits.read'), creditsController.index);
+
+/**
+ * @swagger
+ * /credits:
  *   post:
  *     summary: Crea un nuevo crédito
  *     tags: [Credits]
@@ -45,30 +40,18 @@ router.use(authMiddleware);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               client_id:
- *                 type: integer
- *               monto:
- *                 type: number
- *               cuotas:
- *                 type: integer
+ *             $ref: '#/components/schemas/Credit'
  *     responses:
  *       201:
  *         description: Crédito creado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
  */
-router.get('/', authorize('credits.read'), creditsController.index);
 router.post('/', authorize('credits.create'), creditsController.store);
 
 /**
  * @swagger
  * /credits/{id}:
  *   get:
- *     summary: Obtiene un crédito por ID
+ *     summary: Obtiene un crédito por su ID
  *     tags: [Credits]
  *     security:
  *       - bearerAuth: []
@@ -81,10 +64,6 @@ router.post('/', authorize('credits.create'), creditsController.store);
  *     responses:
  *       200:
  *         description: Crédito obtenido exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
  */
 router.get('/:id', authorize('credits.read'), creditsController.show);
 

@@ -13,7 +13,7 @@ const authController = require('../controllers/AuthController');
  * @swagger
  * /auth/login:
  *   post:
- *     summary: Inicia sesión de un usuario
+ *     summary: Inicia sesión y obtiene tokens de acceso y refresco
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -24,31 +24,20 @@ const authController = require('../controllers/AuthController');
  *             properties:
  *               email:
  *                 type: string
- *                 example: admin@creditos.com
+ *                 format: email
  *               password:
  *                 type: string
- *                 example: Admin123!
  *     responses:
  *       200:
  *         description: Login exitoso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- *       401:
- *         description: Credenciales inválidas
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
  */
 router.post('/login', authController.login);
 
 /**
  * @swagger
- * /auth/refresh-token:
+ * /auth/refresh:
  *   post:
- *     summary: Refresca el token de acceso
+ *     summary: Renueva el token de acceso usando un token de refresco
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -61,17 +50,61 @@ router.post('/login', authController.login);
  *                 type: string
  *     responses:
  *       200:
- *         description: Token refrescado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- *       401:
- *         description: Token de refresco inválido
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Token renovado exitosamente
+ */
+router.post('/refresh', authController.refresh);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Cierra sesión y revoca el token de refresco
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Logout exitoso
+ */
+
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Registra un nuevo usuario (solo para administradores)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       201:
+ *         description: Usuario registrado exitosamente
+ */
+router.post('/login', authController.login);
+
+/**
+ * @swagger
+ * /auth/profile:
+ *   get:
+ *     summary: Obtiene el perfil del usuario autenticado
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Perfil obtenido exitosamente
  */
 router.post('/refresh-token', authController.refreshToken);
 

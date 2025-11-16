@@ -45,4 +45,23 @@ router.use(authMiddleware);
  */
 router.get('/payment-schedule', authorize('reports.read'), reportsController.getPaymentSchedule);
 
+/**
+ * @swagger
+ * /reports/metrics/download:
+ *   get:
+ *     summary: Descarga un reporte de métricas en formato Excel
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Reporte de métricas generado exitosamente
+ *         content:
+ *           application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+ *             schema:
+ *               type: string
+ *               format: binary
+ */
+router.get('/metrics/download', authorize('reports.download'), reportsController.downloadMetrics);
+
 module.exports = router;

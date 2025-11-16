@@ -1,4 +1,4 @@
-const { body, param } = require('express-validator');
+const { body } = require('express-validator');
 const validate = require('../middlewares/validate');
 const asyncHandler = require('../middlewares/asyncHandler');
 const createPaymentUseCase = require('../../application/use-cases/CreatePaymentUseCase');

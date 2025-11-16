@@ -106,6 +106,6 @@ router.post('/login', authController.login);
  *       200:
  *         description: Perfil obtenido exitosamente
  */
-router.post('/refresh-token', authController.refreshToken);
+router.post('/refresh-token', authController.refresh);
 
 module.exports = router;

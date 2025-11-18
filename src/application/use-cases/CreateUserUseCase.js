@@ -44,9 +44,7 @@ class CreateUserUseCase {
       passwordHash,
       telefono: telefono?.trim() || null,
       isActive: true,
-      createdBy,
       createdAt: new Date(),
-      updatedBy: createdBy,
       updatedAt: new Date()
     });
 

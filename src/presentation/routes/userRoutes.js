@@ -11,7 +11,6 @@ const usersController = require('../controllers/UsersController');
  *   name: Users
  *   description: Endpoints para la gestión de usuarios
  */
-router.use(authMiddleware);
 
 /**
  * @swagger
@@ -38,7 +37,7 @@ router.use(authMiddleware);
  *       200:
  *         description: Lista de usuarios
  */
-router.get('/', authorize('users.read'), usersController.index);
+router.get('/', authMiddleware, authorize('users.read'), usersController.index);
 
 /**
  * @swagger
@@ -58,7 +57,7 @@ router.get('/', authorize('users.read'), usersController.index);
  *       200:
  *         description: Datos del usuario
  */
-router.get('/:id', authorize('users.read'), usersController.show);
+router.get('/:id', authMiddleware, authorize('users.read'), usersController.show);
 
 /**
  * @swagger
@@ -66,8 +65,6 @@ router.get('/:id', authorize('users.read'), usersController.show);
  *   post:
  *     summary: Crea un nuevo usuario
  *     tags: [Users]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -78,7 +75,7 @@ router.get('/:id', authorize('users.read'), usersController.show);
  *       201:
  *         description: Usuario creado
  */
-router.post('/', authorize('users.create'), usersController.store);
+router.post('/', usersController.store);
 
 /**
  * @swagger
@@ -104,7 +101,7 @@ router.post('/', authorize('users.create'), usersController.store);
  *       200:
  *         description: Usuario actualizado
  */
-router.put('/:id', authorize('users.update'), usersController.update);
+router.put('/:id', authMiddleware, authorize('users.update'), usersController.update);
 
 /**
  * @swagger
@@ -124,7 +121,7 @@ router.put('/:id', authorize('users.update'), usersController.update);
  *       204:
  *         description: Usuario desactivado
  */
-router.delete('/:id', authorize('users.delete'), usersController.destroy);
+router.delete('/:id', authMiddleware, authorize('users.delete'), usersController.destroy);
 
 /**
  * @swagger
@@ -144,7 +141,7 @@ router.delete('/:id', authorize('users.delete'), usersController.destroy);
  *       204:
  *         description: Usuario eliminado permanentemente
  */
-router.delete('/:id/hard', authorize('users.delete'), usersController.hardDestroy);
+router.delete('/:id/hard', authMiddleware, authorize('users.delete'), usersController.hardDestroy);
 
 /**
  * @swagger
@@ -173,7 +170,7 @@ router.delete('/:id/hard', authorize('users.delete'), usersController.hardDestro
  *       200:
  *         description: Rol asignado
  */
-router.post('/:id/roles', authorize('users.update'), usersController.assignRole);
+router.post('/:id/roles', authMiddleware, authorize('users.update'), usersController.assignRole);
 
 /**
  * @swagger
@@ -198,6 +195,6 @@ router.post('/:id/roles', authorize('users.update'), usersController.assignRole)
  *       200:
  *         description: Rol removido
  */
-router.delete('/:id/roles/:roleId', authorize('users.update'), usersController.removeRole);
+router.delete('/:id/roles/:roleId', authMiddleware, authorize('users.update'), usersController.removeRole);
 
 module.exports = router;

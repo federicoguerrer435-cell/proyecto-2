@@ -8,8 +8,13 @@ class PrismaRefreshTokenRepository {
    * Crea un nuevo refresh token
    */
   async create(tokenData) {
+    const { userId, token, expiresAt } = tokenData;
     return await prisma.refreshToken.create({
-      data: tokenData
+      data: {
+        userId,
+        token,
+        expiresAt
+      }
     });
   }
 

@@ -2,6 +2,8 @@ const { body } = require('express-validator');
 const loginUserUseCase = require('../../application/use-cases/LoginUserUseCase');
 const refreshTokenUseCase = require('../../application/use-cases/RefreshTokenUseCase');
 const logoutUserUseCase = require('../../application/use-cases/LogoutUserUseCase');
+const forgotPasswordUseCase = require('../../application/use-cases/ForgotPasswordUseCase');
+const resetPasswordUseCase = require('../../application/use-cases/ResetPasswordUseCase');
 const userRepository = require('../../infrastructure/repositories/PrismaUserRepository');
 const passwordService = require('../../infrastructure/security/PasswordService');
 const { asyncHandler } = require('../middlewares/errorHandler');
@@ -185,6 +187,35 @@ class AuthController {
       }
     });
   });
+
+  /**
+   * POST /api/auth/forgot-password
+   * Inicia el proceso de recuperación de contraseña
+   */
+  forgotPassword = [
+    body('email').isEmail().withMessage('Email inválido'),
+    validate,
+    asyncHandler(async (req, res) => {
+      const { email } = req.body;
+      const result = await forgotPasswordUseCase.execute(email);
+      res.status(200).json(result);
+    }),
+  ];
+
+  /**
+   * POST /api/auth/reset-password/:token
+   * Resetea la contraseña de un usuario
+   */
+  resetPassword = [
+    body('password').isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
+    validate,
+    asyncHandler(async (req, res) => {
+      const { token } = req.params;
+      const { password } = req.body;
+      const result = await resetPasswordUseCase.execute(token, password);
+      res.status(200).json(result);
+    }),
+  ];
 }
 
 module.exports = new AuthController();

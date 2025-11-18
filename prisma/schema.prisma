@@ -41,6 +41,7 @@ enum MedioNotificacion {
   WHATSAPP
   EMAIL
   SMS
+  TELEGRAM
 }
 
 enum EstadoEnvio {
@@ -75,6 +76,11 @@ model User {
   creator       User?          @relation("UserCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   updatedUsers  User[]         @relation("UserUpdater")
   updater       User?          @relation("UserUpdater", fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  // Recuperación de contraseña
+  resetPasswordToken   String?   @unique @map("reset_password_token")
+  resetPasswordExpires DateTime? @map("reset_password_expires")
+  telegramChatId       String?   @unique @db.VarChar(100)
 
   @@index([email])
   @@map("users")
@@ -145,6 +151,7 @@ model Client {
   email           String?  @db.VarChar(255)
   direccion       String?  @db.Text
   telefono        String   @db.VarChar(20)
+  telegramChatId  String?  @unique @db.VarChar(100)
   isActive        Boolean  @default(true) @map("is_active")
   referencias     String?  @db.Text
   modalidadPago   String?  @db.VarChar(100) @map("modalidad_pago")

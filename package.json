@@ -14,27 +14,33 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "prisma:seed": "node prisma/seed.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha tests/**/*.test.js --timeout 10000 --exit",
     "jobs:notify": "node src/jobs/notifyPayments.js",
     "jobs:notify:once": "node src/jobs/notifyPayments.js --once"
-
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^6.2.0",
-    "axios": "^1.7.9",
+    "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
+    "chai": "^6.2.1",
+    "chai-http": "^4.4.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
     "express": "^5.1.0",
     "express-validator": "^7.0.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
+    "mocha": "^11.7.5",
     "node-cron": "^3.0.3",
     "nodemailer": "^7.0.10",
-    "pdfkit": "^0.15.2"
+    "pdfkit": "^0.15.2",
+    "supertest": "^7.1.4",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.10",

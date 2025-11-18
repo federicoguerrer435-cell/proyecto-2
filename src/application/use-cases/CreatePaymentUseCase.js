@@ -3,12 +3,12 @@ const creditRepository = require('../../infrastructure/repositories/PrismaCredit
 const clientRepository = require('../../infrastructure/repositories/PrismaClientRepository');
 const prisma = require('../../infrastructure/database/prismaClient');
 const pdfService = require('../../infrastructure/integrations/pdfService');
-const whatsappService = require('../../infrastructure/integrations/whatsappService');
+const telegramService = require('../../infrastructure/integrations/telegramService');
 const Payment = require('../../domain/entities/Payment');
 
 /**
  * Caso de uso: Crear Pago
- * Registra un pago, genera ticket PDF, envía WhatsApp y actualiza estado del crédito
+ * Registra un pago, genera ticket PDF, envía Telegram y actualiza estado del crédito
  */
 class CreatePaymentUseCase {
   async execute(paymentData, createdBy) {
@@ -126,21 +126,22 @@ class CreatePaymentUseCase {
         }
       });
 
-      // 6. Calcular total pagado del crédito
-      const totalPagado = await tx.payment.aggregate({
+      // 6. Calcular montos y saldos
+      const montoTotal = Number(credit.montoPrincipal) * (1 + Number(credit.tasaInteresAplicada));
+
+      const totalPagadoResult = await tx.payment.aggregate({
         where: { creditId: credit.id },
         _sum: {
           monto: true
         }
       });
-
-      const montoPagado = Number(totalPagado._sum.monto) || 0;
-      const montoTotal = Number(credit.montoPrincipal) * (1 + Number(credit.tasaInteresAplicada));
+      const totalPagado = Number(totalPagadoResult._sum.monto) || 0;
+      const saldoPendiente = montoTotal - totalPagado;
       
       // 7. Actualizar estado del crédito si está completamente pagado
       let nuevoEstado = credit.estado;
       
-      if (montoPagado >= montoTotal && credit.estado === 'ACTIVO') {
+      if (totalPagado >= montoTotal && credit.estado === 'ACTIVO') {
         nuevoEstado = 'PAGADO';
         await tx.credit.update({
           where: { id: credit.id },
@@ -156,42 +157,57 @@ class CreatePaymentUseCase {
         payment: newPayment,
         ticket,
         creditoActualizado: nuevoEstado !== credit.estado,
-        nuevoEstadoCredito: nuevoEstado
+        nuevoEstadoCredito: nuevoEstado,
+        saldoPendiente,
+        montoTotal,
       };
     });
 
-    // 8. Enviar notificación por WhatsApp (fuera de la transacción)
+    // 8. Enviar notificación por Telegram (fuera de la transacción)
     const mensaje = `
-¡Pago registrado exitosamente! 🎉
+*¡Pago registrado exitosamente!* 🎉
 
-Comprobante: ${result.ticket.numeroComprobante}
-Cliente: ${client.nombre}
-Crédito: ${credit.numeroCredito}
-Monto pagado: $${Number(result.payment.monto).toFixed(2)}
-Cuota ${result.payment.cuotaNumero} de ${credit.cuotas}
-Método: ${result.payment.metodoPago}
+*Comprobante:* \` ${result.ticket.numeroComprobante} \`
+*Cliente:* ${client.nombre}
+*Crédito:* ${credit.numeroCredito}
+*Monto Principal:* $${Number(credit.montoPrincipal).toFixed(2)}
+*Cuotas:* ${credit.cuotas}
 
-Gracias por su pago.
+*Detalles del Pago:*
+*Monto Pagado:* $${Number(result.payment.monto).toFixed(2)}
+*Cuota:* ${result.payment.cuotaNumero}
+*Método:* ${result.payment.metodoPago}
+
+*Saldo Pendiente:* $${result.saldoPendiente.toFixed(2)}
+
+_Gracias por su pago._
     `.trim();
 
-    let whatsappResponse = null;
-    
-    try {
-      whatsappResponse = await whatsappService.sendTextMessage(client.telefono, mensaje);
-    } catch (error) {
-      console.error('Error enviando WhatsApp:', error);
+    let telegramResponse = null;
+    const chatId = client.telegramChatId;
+
+    if (chatId) {
+      try {
+        telegramResponse = await telegramService.sendMessage(chatId, mensaje);
+      } catch (error) {
+        console.error(`Error enviando mensaje de Telegram a ${chatId}:`, error);
+      }
+    } else {
+      console.warn(`Advertencia: El cliente ${client.nombre} (ID: ${client.id}) no tiene un telegramChatId configurado.`);
     }
 
     // 9. Registrar notificación
     await prisma.notification.create({
       data: {
-        clienteId: client.id,
+        client: {
+          connect: { id: client.id }
+        },
         tipo: 'PAGO_REGISTRADO',
         mensaje,
-        medio: 'WHATSAPP',
-        estadoEnvio: whatsappResponse?.success ? 'ENVIADO' : 'FALLIDO',
-        responseApi: JSON.stringify(whatsappResponse),
-        fechaEnvio: whatsappResponse?.success ? new Date() : null,
+        medio: 'TELEGRAM',
+        estadoEnvio: telegramResponse?.success ? 'ENVIADO' : 'FALLIDO',
+        responseApi: JSON.stringify(telegramResponse),
+        fechaEnvio: telegramResponse?.success ? new Date() : null,
         createdAt: new Date()
       }
     });
@@ -206,7 +222,7 @@ Gracias por su pago.
       },
       creditoActualizado: result.creditoActualizado,
       nuevoEstadoCredito: result.nuevoEstadoCredito,
-      notificacionEnviada: whatsappResponse?.success || false
+      notificacionEnviada: telegramResponse?.success || false
     };
   }
 }

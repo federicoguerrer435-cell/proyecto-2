@@ -61,8 +61,7 @@ class LoginUserUseCase {
     await refreshTokenRepository.create({
       userId: user.id,
       token: refreshToken,
-      expiresAt: jwtService.getRefreshTokenExpirationDate(),
-      revoked: false
+      expiresAt: jwtService.getRefreshTokenExpirationDate()
     });
 
     // Retornar usuario (sin password) y tokens

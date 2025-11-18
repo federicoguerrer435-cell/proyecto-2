@@ -1,9 +1,6 @@
 const express = require('express');
-const authController = require('../controllers/AuthController');
-const authMiddleware = require('../middlewares/authMiddleware');
-const { authorizeRole } = require('../middlewares/authorize');
-
 const router = express.Router();
+const authController = require('../controllers/AuthController');
 
 /**
  * @swagger
@@ -76,7 +73,6 @@ router.post('/refresh', authController.refresh);
  *       200:
  *         description: Logout exitoso
  */
-router.post('/logout', authController.logout);
 
 /**
  * @swagger
@@ -96,7 +92,7 @@ router.post('/logout', authController.logout);
  *       201:
  *         description: Usuario registrado exitosamente
  */
-router.post('/register', authMiddleware, authorizeRole('ADMIN'), authController.register);
+router.post('/login', authController.login);
 
 /**
  * @swagger
@@ -110,7 +106,7 @@ router.post('/register', authMiddleware, authorizeRole('ADMIN'), authController.
  *       200:
  *         description: Perfil obtenido exitosamente
  */
-router.get('/profile', authMiddleware, authController.profile);
+router.post('/refresh-token', authController.refresh);
 
 /**
  * @swagger

@@ -1,0 +1,20 @@
+@api_url = http://localhost:3000/api
+@auth_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInJvbGUiOiJBRE1JTklTVFJVRE9SIiwiaWF0IjoxNzMyNTY4NDI5LCJleHAiOjE3MzI1NzIwMjl9.e0zY1X-s-21H0-M3XQQ-C-i_1-Y3-H5-h1-Z3-Y2-O
+
+###
+
+# @name login
+POST {{api_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@creditos.com",
+  "password": "Admin123!"
+}
+
+###
+
+# @name get_payment_schedule
+GET {{api_url}}/reports/payment-schedule?date=2026-05-13
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}

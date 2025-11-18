@@ -129,7 +129,7 @@ class UsersController {
 
     asyncHandler(async (req, res) => {
       const { nombre, email, password, telefono, roleIds } = req.body;
-      const createdBy = req.user.id;
+      const createdBy = req.user ? req.user.id : null;
 
       const user = await createUserUseCase.execute({
         nombre,

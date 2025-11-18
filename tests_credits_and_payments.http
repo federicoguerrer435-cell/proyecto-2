@@ -1,0 +1,172 @@
+### ==========================================
+### GESTIÓN DE CLIENTES, CRÉDITOS Y PAGOS
+### ==========================================
+
+### Variables
+@baseUrl = http://localhost:3000/api
+@adminToken =
+@cobradorToken =
+@clienteId =
+@creditoId =
+
+### ==========================================
+### 1. LOGIN (Admin)
+### ==========================================
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@creditos.com",
+  "password": "Admin123!"
+}
+
+@adminToken = {{loginAdmin.response.body.$.data.accessToken}}
+
+### ==========================================
+### 2. CREAR UN CLIENTE
+### ==========================================
+# @name createClient
+POST {{baseUrl}}/clients
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nombre": "Cliente de Prueba Para Crédito",
+  "cedula": "1234567890",
+  "email": "cliente.credito@example.com",
+  "telefono": "987654321",
+  "direccion": "Calle Falsa 123",
+  "assignedTo": 2
+}
+
+@clienteId = {{createClient.response.body.$.data.id}}
+
+
+### ==========================================
+### 3. CREAR UN CRÉDITO (Debe quedar PENDIENTE)
+### ==========================================
+# @name createCredit
+POST {{baseUrl}}/credits
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "clienteId": {{clienteId}},
+  "montoPrincipal": 1000,
+  "cuotas": 10,
+  "nota": "Crédito de prueba inicial"
+}
+
+@creditoId = {{createCredit.response.body.$.data.id}}
+
+### ==========================================
+### 4. OBTENER EL CRÉDITO CREADO
+### ==========================================
+
+GET {{baseUrl}}/credits/{{creditoId}}
+Authorization: Bearer {{adminToken}}
+
+### ==========================================
+### 5. APROBAR EL CRÉDITO
+### ==========================================
+# @name approveCredit
+POST {{baseUrl}}/credits/{{creditoId}}/approve
+Authorization: Bearer {{adminToken}}
+
+
+### ==========================================
+### 6. INTENTAR CREAR OTRO CRÉDITO (Debe fallar)
+### ==========================================
+POST {{baseUrl}}/credits
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "clienteId": {{clienteId}},
+  "montoPrincipal": 500,
+  "cuotas": 5,
+  "nota": "Este crédito no debería ser creado"
+}
+
+
+### ==========================================
+### 7. REGISTRAR UN PAGO PARCIAL (ABONO)
+### ==========================================
+POST {{baseUrl}}/payments
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "creditId": {{creditoId}},
+  "monto": 120.00,
+  "metodoPago": "EFECTIVO",
+  "cuotaNumero": 1
+}
+
+### ==========================================
+### 8. REGISTRAR PAGO FINAL PARA SALDAR
+### El monto total con interés del 20% es 1200. Se pagaron 120. Faltan 1080.
+### ==========================================
+POST {{baseUrl}}/payments
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "creditId": {{creditoId}},
+  "monto": 1080.00,
+  "metodoPago": "TRANSFERENCIA",
+  "cuotaNumero": 2
+}
+
+### ==========================================
+### 9. VERIFICAR QUE EL CRÉDITO ESTÉ PAGADO
+### ==========================================
+
+GET {{baseUrl}}/credits/{{creditoId}}
+Authorization: Bearer {{adminToken}}
+
+
+### ==========================================
+### 10. CREAR UN SEGUNDO CRÉDITO PARA RECHAZAR
+### ==========================================
+# @name createSecondCredit
+POST {{baseUrl}}/credits
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "clienteId": {{clienteId}},
+  "montoPrincipal": 200,
+  "cuotas": 2,
+  "nota": "Crédito de prueba para ser rechazado"
+}
+
+@creditoId2 = {{createSecondCredit.response.body.$.data.id}}
+
+### ==========================================
+### 11. RECHAZAR EL SEGUNDO CRÉDITO
+### ==========================================
+POST {{baseUrl}}/credits/{{creditoId2}}/reject
+Authorization: Bearer {{adminToken}}
+
+
+### ==========================================
+### 12. VERIFICAR QUE EL SEGUNDO CRÉDITO ESTÉ RECHAZADO
+### ==========================================
+GET {{baseUrl}}/credits/{{creditoId2}}
+Authorization: Bearer {{adminToken}}
+
+### ==========================================
+### 13. CREAR UN TERCER CRÉDITO (Debe ser exitoso)
+### ==========================================
+POST {{baseUrl}}/credits
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "clienteId": {{clienteId}},
+  "montoPrincipal": 300,
+  "cuotas": 3,
+  "nota": "Este crédito sí debería poderse crear"
+}

@@ -1,19 +1,11 @@
 const nodemailer = require('nodemailer');
-require('dotenv').config();
 
-/**
- * Email Service
- * Servicio para envío de emails (opcional)
- */
 class EmailService {
   constructor() {
     this.transporter = null;
     this.initializeTransporter();
   }
 
-  /**
-   * Inicializa el transporter de nodemailer
-   */
   initializeTransporter() {
     const emailConfig = {
       host: process.env.EMAIL_HOST,
@@ -25,22 +17,13 @@ class EmailService {
       }
     };
 
-    // Solo inicializar si está configurado
     if (emailConfig.host && emailConfig.auth.user && emailConfig.auth.pass) {
-      this.transporter = nodemailer.createTransporter(emailConfig);
+      this.transporter = nodemailer.createTransport(emailConfig);
     } else {
       console.warn('Email service not configured');
     }
   }
 
-  /**
-   * Envía un email
-   * @param {string} to - Destinatario
-   * @param {string} subject - Asunto
-   * @param {string} text - Contenido en texto plano
-   * @param {string} html - Contenido en HTML
-   * @returns {Promise<Object>} Resultado del envío
-   */
   async sendEmail(to, subject, text, html = null) {
     try {
       if (!this.transporter) {
@@ -76,12 +59,6 @@ class EmailService {
     }
   }
 
-  /**
-   * Envía notificación de recordatorio de pago
-   * @param {string} email - Email del cliente
-   * @param {Object} credit - Datos del crédito
-   * @returns {Promise<Object>} Resultado del envío
-   */
   async sendPaymentReminder(email, credit) {
     const subject = 'Recordatorio de Pago - Crédito ' + credit.numeroCredito;
     const text = `

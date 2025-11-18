@@ -135,13 +135,13 @@ class CreatePaymentUseCase {
           monto: true
         }
       });
-      const montoPagado = Number(totalPagadoResult._sum.monto) || 0;
-      const saldoPendiente = montoTotal - montoPagado;
+      const totalPagado = Number(totalPagadoResult._sum.monto) || 0;
+      const saldoPendiente = montoTotal - totalPagado;
       
       // 7. Actualizar estado del crédito si está completamente pagado
       let nuevoEstado = credit.estado;
       
-      if (montoPagado >= montoTotal && credit.estado === 'ACTIVO') {
+      if (totalPagado >= montoTotal && credit.estado === 'ACTIVO') {
         nuevoEstado = 'PAGADO';
         await tx.credit.update({
           where: { id: credit.id },
@@ -184,16 +184,16 @@ _Gracias por su pago._
     `.trim();
 
     let telegramResponse = null;
-    const chatId = process.env.TELEGRAM_CHAT_ID; // Usar un chat ID global por ahora
+    const chatId = client.telegramChatId;
 
     if (chatId) {
       try {
         telegramResponse = await telegramService.sendMessage(chatId, mensaje);
       } catch (error) {
-        console.error('Error enviando mensaje de Telegram:', error);
+        console.error(`Error enviando mensaje de Telegram a ${chatId}:`, error);
       }
     } else {
-      console.warn('Advertencia: No se ha configurado un TELEGRAM_CHAT_ID en las variables de entorno.');
+      console.warn(`Advertencia: El cliente ${client.nombre} (ID: ${client.id}) no tiene un telegramChatId configurado.`);
     }
 
     // 9. Registrar notificación

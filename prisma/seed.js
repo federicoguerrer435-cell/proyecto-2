@@ -35,6 +35,7 @@ async function main() {
     
     // Reportes
     { name: 'reports.read', module: 'reports', action: 'read', description: 'Ver reportes' },
+    { name: 'reports.download', module: 'reports', action: 'download', description: 'Descargar reportes' },
     { name: 'dashboard.read', module: 'dashboard', action: 'read', description: 'Ver dashboard' },
     
     // Roles
@@ -110,6 +111,7 @@ async function main() {
     'credits.read',
     'payments.create',
     'payments.read',
+    'reports.download',
     'dashboard.read'
   ];
 

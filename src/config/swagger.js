@@ -41,6 +41,11 @@ const swaggerDefinition = {
           email: { type: 'string' },
           telefono: { type: 'string' },
           direccion: { type: 'string' },
+          telegramChatId: { type: 'string', nullable: true },
+          isActive: { type: 'boolean' },
+          referencias: { type: 'string', nullable: true },
+          modalidadPago: { type: 'string', nullable: true },
+          assignedTo: { type: 'integer', nullable: true },
         },
       },
       Credit: {
@@ -48,18 +53,36 @@ const swaggerDefinition = {
         properties: {
           id: { type: 'integer' },
           numeroCredito: { type: 'string' },
-          montoPrincipal: { type: 'number' },
+          clienteId: { type: 'integer' },
+          montoPrincipal: { type: 'string' },
+          nota: { type: 'string', nullable: true },
           cuotas: { type: 'integer' },
-          estado: { type: 'string' },
+          tasaInteresAplicada: { type: 'string' },
+          fechaVencimiento: { type: 'string', format: 'date-time' },
+          estado: { 
+            type: 'string',
+            enum: ['PENDIENTE', 'ACTIVO', 'PAGADO', 'INCUMPLIDO', 'RENOVADO', 'RECHAZADO']
+          },
+          montoTotal: { type: 'string' },
+          valorCuota: { type: 'string' },
+          totalInteres: { type: 'string' },
         },
       },
       Payment: {
         type: 'object',
         properties: {
           id: { type: 'integer' },
-          monto: { type: 'number' },
-          metodoPago: { type: 'string' },
+          creditId: { type: 'integer' },
+          clienteId: { type: 'integer' },
+          userId: { type: 'integer' },
+          monto: { type: 'string' },
+          fechaPago: { type: 'string', format: 'date-time' },
+          metodoPago: { 
+            type: 'string',
+            enum: ['EFECTIVO', 'TRANSFERENCIA', 'CHEQUE', 'TARJETA']
+          },
           cuotaNumero: { type: 'integer' },
+          comprobanteReferencia: { type: 'string', nullable: true },
         },
       },
       ApiResponse: {

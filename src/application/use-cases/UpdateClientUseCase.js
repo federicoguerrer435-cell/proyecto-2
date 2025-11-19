@@ -18,6 +18,7 @@ class UpdateClientUseCase {
     if (clientData.email !== undefined) updateData.email = clientData.email || null;
     if (clientData.direccion !== undefined) updateData.direccion = clientData.direccion || null;
     if (clientData.telefono !== undefined) updateData.telefono = clientData.telefono || null;
+    if (clientData.telegramChatId !== undefined) updateData.telegramChatId = clientData.telegramChatId || null;
     if (clientData.isActive !== undefined) updateData.isActive = Boolean(clientData.isActive);
     if (clientData.referencias !== undefined) updateData.referencias = clientData.referencias || null;
     if (clientData.modalidadPago !== undefined) updateData.modalidadPago = clientData.modalidadPago || null;

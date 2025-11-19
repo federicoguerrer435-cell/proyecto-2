@@ -86,10 +86,58 @@ router.post('/', authorize('clients.create'), clientsController.store);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Client'
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *                 description: Nombre del cliente
+ *                 example: "jean benitez"
+ *               cedula:
+ *                 type: string
+ *                 description: Cédula del cliente
+ *                 example: "123456789"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email del cliente
+ *                 example: "jesebe4991@gmail.com"
+ *               telefono:
+ *                 type: string
+ *                 description: Teléfono del cliente
+ *                 example: "3167945825"
+ *               direccion:
+ *                 type: string
+ *                 description: Dirección del cliente
+ *                 example: "cra24D#42a115"
+ *               telegramChatId:
+ *                 type: string
+ *                 description: ID del chat de Telegram para notificaciones
+ *                 example: "1341615509"
+ *               referencias:
+ *                 type: string
+ *                 description: Referencias del cliente
+ *               modalidadPago:
+ *                 type: string
+ *                 description: Modalidad de pago preferida
+ *               assignedTo:
+ *                 type: integer
+ *                 description: ID del cobrador asignado
+ *               isActive:
+ *                 type: boolean
+ *                 description: Estado activo del cliente
  *     responses:
  *       200:
  *         description: Cliente actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Client'
  */
 router.put('/:id', authorize('clients.update'), clientsController.update);
 

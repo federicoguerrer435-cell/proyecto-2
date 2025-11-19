@@ -40,10 +40,53 @@ router.get('/', authorize('credits.read'), creditsController.index);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Credit'
+ *             type: object
+ *             required:
+ *               - client_id
+ *               - monto
+ *               - cuotas
+ *             properties:
+ *               client_id:
+ *                 type: integer
+ *                 description: ID del cliente
+ *                 example: 11
+ *               monto:
+ *                 type: number
+ *                 description: Monto principal del crédito
+ *                 example: 1000000
+ *               cuotas:
+ *                 type: integer
+ *                 description: Número de cuotas
+ *                 example: 12
+ *               tasa:
+ *                 type: number
+ *                 description: Tasa de interés (opcional, usa la global si no se especifica)
+ *                 example: 0.20
+ *               plazo:
+ *                 type: integer
+ *                 description: Plazo en meses (calcula automáticamente la fecha de vencimiento)
+ *                 example: 6
+ *               tipo_credito:
+ *                 type: string
+ *                 description: Tipo de crédito
+ *                 example: "Personal"
+ *               nota:
+ *                 type: string
+ *                 description: Notas adicionales
+ *                 example: "Crédito de prueba"
  *     responses:
  *       201:
  *         description: Crédito creado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Credit'
  */
 router.post('/', authorize('credits.create'), creditsController.store);
 

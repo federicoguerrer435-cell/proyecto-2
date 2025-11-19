@@ -1,4 +1,6 @@
 const PDFDocument = require('pdfkit');
+const { pdf } = require('pdf-to-img');
+const sharp = require('sharp');
 
 /**
  * PDF Service
@@ -169,6 +171,39 @@ class PDFService {
         reject(error);
       }
     });
+  }
+
+  /**
+   * Convierte un PDF a imagen PNG
+   * @param {Buffer} pdfBuffer - Buffer del PDF
+   * @returns {Promise<Buffer>} Buffer de la imagen PNG
+   */
+  async convertPDFToImage(pdfBuffer) {
+    try {
+      // Convertir PDF a imágenes (puede tener múltiples páginas)
+      const document = await pdf(pdfBuffer, { scale: 2.0 });
+      
+      // Obtener la primera página
+      const pages = [];
+      for await (const page of document) {
+        pages.push(page);
+        break; // Solo necesitamos la primera página
+      }
+
+      if (pages.length === 0) {
+        throw new Error('No se pudo convertir el PDF a imagen');
+      }
+
+      // Optimizar la imagen con sharp
+      const imageBuffer = await sharp(pages[0])
+        .png({ quality: 90 })
+        .toBuffer();
+
+      return imageBuffer;
+    } catch (error) {
+      console.error('Error convirtiendo PDF a imagen:', error);
+      throw error;
+    }
   }
 }
 

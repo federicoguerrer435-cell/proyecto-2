@@ -188,7 +188,31 @@ _Gracias por su pago._
 
     if (chatId) {
       try {
-        telegramResponse = await telegramService.sendMessage(chatId, mensaje);
+        // Enviar mensaje de texto
+        await telegramService.sendMessage(chatId, mensaje);
+        
+        // Convertir PDF a imagen y enviar
+        if (result.ticket.ticketPdf) {
+          try {
+            const imageBuffer = await pdfService.convertPDFToImage(result.ticket.ticketPdf);
+            telegramResponse = await telegramService.sendPhoto(
+              chatId, 
+              imageBuffer, 
+              `📄 Comprobante: ${result.ticket.numeroComprobante}`
+            );
+          } catch (imageError) {
+            console.error('Error convirtiendo/enviando imagen del ticket:', imageError);
+            // Si falla la conversión a imagen, enviar el PDF como documento
+            telegramResponse = await telegramService.sendDocument(
+              chatId,
+              result.ticket.ticketPdf,
+              result.ticket.fileName || `ticket_${result.ticket.numeroComprobante}.pdf`,
+              `📄 Comprobante: ${result.ticket.numeroComprobante}`
+            );
+          }
+        } else {
+          telegramResponse = { success: true };
+        }
       } catch (error) {
         console.error(`Error enviando mensaje de Telegram a ${chatId}:`, error);
       }

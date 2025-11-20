@@ -1,0 +1,255 @@
+# Tests de Endpoints - Créditos (Aprobar/Rechazar)
+
+## Variables
+@baseUrl = http://localhost:3000/api
+@token = 
+
+### ==========================================
+### AUTENTICACIÓN (Obtener token primero)
+### ==========================================
+
+### Login con usuario admin
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@creditos.com",
+  "password": "Admin123!"
+}
+
+### Guardar token
+@token = {{login.response.body.$.data.accessToken}}
+
+### ==========================================
+### CRÉDITOS - LISTAR Y VER
+### ==========================================
+
+### Listar todos los créditos
+GET {{baseUrl}}/credits?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### Listar créditos PENDIENTES
+GET {{baseUrl}}/credits?estado=PENDIENTE
+Authorization: Bearer {{token}}
+
+### Listar créditos ACTIVOS
+GET {{baseUrl}}/credits?estado=ACTIVO
+Authorization: Bearer {{token}}
+
+### Listar créditos de un cliente específico
+GET {{baseUrl}}/credits?clienteId=1
+Authorization: Bearer {{token}}
+
+### Ver detalle de un crédito específico
+GET {{baseUrl}}/credits/1
+Authorization: Bearer {{token}}
+
+### ==========================================
+### CRÉDITOS - CREAR (Para tener créditos que aprobar/rechazar)
+### ==========================================
+
+### Crear crédito pendiente para Cliente 1
+# @name createCredit1
+POST {{baseUrl}}/credits
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clienteId": 1,
+  "montoPrincipal": 5000,
+  "cuotas": 12
+}
+
+### Crear otro crédito pendiente para Cliente 2
+POST {{baseUrl}}/credits
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clienteId": 2,
+  "montoPrincipal": 3000,
+  "cuotas": 6,
+  "tasaInteresAplicada": 0.15
+}
+
+### Crear crédito con fecha de vencimiento específica
+POST {{baseUrl}}/credits
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clienteId": 1,
+  "montoPrincipal": 2000,
+  "cuotas": 4,
+  "fechaVencimiento": "2025-12-31"
+}
+
+### ==========================================
+### APROBAR CRÉDITO
+### ==========================================
+
+### Aprobar crédito ID 1 (debe estar en estado PENDIENTE)
+POST {{baseUrl}}/credits/1/approve
+Authorization: Bearer {{token}}
+
+### Aprobar crédito ID 2
+POST {{baseUrl}}/credits/2/approve
+Authorization: Bearer {{token}}
+
+### ==========================================
+### RECHAZAR CRÉDITO
+### ==========================================
+
+### Rechazar crédito ID 3 SIN motivo
+POST {{baseUrl}}/credits/3/reject
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+### Rechazar crédito ID 4 CON motivo
+POST {{baseUrl}}/credits/4/reject
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "motivo": "Documentación incompleta. Falta comprobante de ingresos y referencias personales."
+}
+
+### Rechazar crédito ID 5 con motivo detallado
+POST {{baseUrl}}/credits/5/reject
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "motivo": "El cliente no cumple con los requisitos mínimos de ingresos establecidos. Se requiere un ingreso mensual mínimo de $2000 para el monto solicitado."
+}
+
+### ==========================================
+### PRUEBAS DE VALIDACIÓN (Deben fallar)
+### ==========================================
+
+### Intentar aprobar crédito que NO está PENDIENTE (debe fallar)
+POST {{baseUrl}}/credits/1/approve
+Authorization: Bearer {{token}}
+
+### Intentar rechazar crédito que NO está PENDIENTE (debe fallar)
+POST {{baseUrl}}/credits/1/reject
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "motivo": "Este crédito ya fue procesado anteriormente"
+}
+
+### Intentar aprobar crédito inexistente (debe fallar - 404)
+POST {{baseUrl}}/credits/9999/approve
+Authorization: Bearer {{token}}
+
+### Intentar rechazar con motivo muy corto (debe fallar - validación)
+POST {{baseUrl}}/credits/3/reject
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "motivo": "Corto"
+}
+
+### Intentar aprobar sin autenticación (debe fallar - 401)
+POST {{baseUrl}}/credits/1/approve
+
+### Intentar aprobar con ID inválido (debe fallar - validación)
+POST {{baseUrl}}/credits/abc/approve
+Authorization: Bearer {{token}}
+
+### ==========================================
+### VERIFICAR NOTIFICACIONES
+### ==========================================
+
+### Después de aprobar/rechazar, verificar que se crearon las notificaciones
+### (Necesitarás crear un endpoint GET /api/notifications para esto)
+
+### ==========================================
+### CASOS DE USO COMPLETOS
+### ==========================================
+
+### ESCENARIO 1: Crear crédito → Aprobarlo → Ver detalles
+# 1. Crear crédito
+POST {{baseUrl}}/credits
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clienteId": 1,
+  "montoPrincipal": 10000,
+  "cuotas": 24
+}
+
+# 2. Aprobar el crédito (usa el ID del crédito creado)
+POST {{baseUrl}}/credits/6/approve
+Authorization: Bearer {{token}}
+
+# 3. Ver detalles del crédito aprobado
+GET {{baseUrl}}/credits/6
+Authorization: Bearer {{token}}
+
+### ESCENARIO 2: Crear crédito → Rechazarlo → Ver estado
+# 1. Crear crédito
+POST {{baseUrl}}/credits
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clienteId": 2,
+  "montoPrincipal": 15000,
+  "cuotas": 18
+}
+
+# 2. Rechazar el crédito con motivo
+POST {{baseUrl}}/credits/7/reject
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "motivo": "El análisis de riesgo crediticio del cliente no es favorable. Historial crediticio con morosidad reciente en otras entidades financieras."
+}
+
+# 3. Ver detalles del crédito rechazado
+GET {{baseUrl}}/credits/7
+Authorization: Bearer {{token}}
+
+### ==========================================
+### VALIDACIÓN DE REGLA: Un cliente solo puede tener UN crédito activo
+### ==========================================
+
+### 1. Crear y aprobar primer crédito para cliente
+POST {{baseUrl}}/credits
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clienteId": 3,
+  "montoPrincipal": 5000,
+  "cuotas": 12
+}
+
+# Aprobar el crédito (asume ID 8)
+POST {{baseUrl}}/credits/8/approve
+Authorization: Bearer {{token}}
+
+### 2. Intentar crear segundo crédito para el mismo cliente (debe fallar en creación)
+POST {{baseUrl}}/credits
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clienteId": 3,
+  "montoPrincipal": 3000,
+  "cuotas": 6
+}
+
+### 3. O si se crea como PENDIENTE, intentar aprobar (debe fallar)
+# El sistema debe validar que el cliente ya tiene un crédito ACTIVO
+POST {{baseUrl}}/credits/9/approve
+Authorization: Bearer {{token}}

@@ -1,0 +1,215 @@
+# Tests de Endpoints - Plataforma de Créditos
+
+## Variables
+@baseUrl = http://localhost:3000/api
+@token = 
+
+### ==========================================
+### HEALTH CHECK
+### ==========================================
+
+GET http://localhost:3000/health
+
+### ==========================================
+### AUTENTICACIÓN
+### ==========================================
+
+### Login con usuario admin
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@creditos.com",
+  "password": "Admin123!"
+}
+
+### Guardar token de login (ejecutar después del login)
+@token = {{login.response.body.$.data.accessToken}}
+
+### Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.$.data.refreshToken}}"
+}
+
+### Logout
+POST {{baseUrl}}/auth/logout
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "refreshToken": "{{login.response.body.$.data.refreshToken}}"
+}
+
+### ==========================================
+### USUARIOS - CRUD
+### ==========================================
+
+### Listar usuarios (con paginación)
+GET {{baseUrl}}/users?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### Listar usuarios con búsqueda
+GET {{baseUrl}}/users?search=admin
+Authorization: Bearer {{token}}
+
+### Listar usuarios por rol
+GET {{baseUrl}}/users?roleId=1
+Authorization: Bearer {{token}}
+
+### Obtener usuario por ID
+GET {{baseUrl}}/users/1
+Authorization: Bearer {{token}}
+
+### Crear nuevo usuario
+# @name createUser
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Juan Pérez",
+  "email": "juan.perez@example.com",
+  "password": "password123",
+  "telefono": "555-1234",
+  "roleIds": [2]
+}
+
+### Crear otro usuario (cobrador)
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "María García",
+  "email": "maria.garcia@example.com",
+  "password": "password123",
+  "telefono": "555-5678",
+  "roleIds": [2]
+}
+
+### Actualizar usuario
+PUT {{baseUrl}}/users/2
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "telefono": "555-9999",
+  "isActive": true
+}
+
+### Actualizar usuario - cambiar nombre y email
+PUT {{baseUrl}}/users/2
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Juan Carlos Pérez",
+  "email": "juancarlos.perez@example.com"
+}
+
+### Actualizar usuario - cambiar contraseña
+PUT {{baseUrl}}/users/2
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "newpassword123"
+}
+
+### Actualizar usuario - asignar múltiples roles
+PUT {{baseUrl}}/users/2
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "roleIds": [1, 2]
+}
+
+### Asignar rol a usuario
+POST {{baseUrl}}/users/2/roles
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "roleId": 1
+}
+
+### Remover rol de usuario
+DELETE {{baseUrl}}/users/2/roles/1
+Authorization: Bearer {{token}}
+
+### Desactivar usuario (soft delete)
+DELETE {{baseUrl}}/users/2
+Authorization: Bearer {{token}}
+
+### Eliminar usuario permanentemente (hard delete)
+DELETE {{baseUrl}}/users/3/hard
+Authorization: Bearer {{token}}
+
+### ==========================================
+### PRUEBAS DE VALIDACIÓN
+### ==========================================
+
+### Crear usuario sin email (debe fallar)
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Usuario Sin Email",
+  "password": "password123"
+}
+
+### Crear usuario con email duplicado (debe fallar)
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Usuario Duplicado",
+  "email": "admin@creditos.com",
+  "password": "password123"
+}
+
+### Crear usuario con contraseña corta (debe fallar)
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Usuario Pass Corta",
+  "email": "test@test.com",
+  "password": "123"
+}
+
+### Actualizar con email duplicado (debe fallar)
+PUT {{baseUrl}}/users/2
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "email": "admin@creditos.com"
+}
+
+### Acceder sin token (debe fallar - 401)
+GET {{baseUrl}}/users
+
+### ==========================================
+### PRUEBAS DE PERMISOS
+### ==========================================
+
+### Intentar crear usuario sin permiso users.create
+### (Primero crear un usuario sin permisos y usar su token)
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer INVALID_TOKEN
+
+{
+  "nombre": "Test Sin Permiso",
+  "email": "test@test.com",
+  "password": "password123"
+}
